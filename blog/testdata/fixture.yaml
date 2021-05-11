@@ -1,0 +1,6 @@
+- model: User
+  rows:
+    - _id: current
+      username: CurrentUser
+      email: hello@world.com
+      password_hash: #1

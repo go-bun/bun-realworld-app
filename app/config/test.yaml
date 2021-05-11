@@ -1,0 +1,5 @@
+debug: true
+secret_key: 'JeFvgCrMuvkoAJjkHgyaMDxku'
+
+pgx:
+  dsn: postgres://postgres:postgres@localhost:5432/realworld_test?sslmode=disable
