@@ -17,10 +17,14 @@ const kb = 10
 
 var errUserNotFound = errors.New("Not registered email or invalid password")
 
-type UserHandler struct{}
+type UserHandler struct {
+	app *app.App
+}
 
-func NewUserHandler() UserHandler {
-	return UserHandler{}
+func NewUserHandler(app *app.App) UserHandler {
+	return UserHandler{
+		app: app,
+	}
 }
 
 func (*UserHandler) Current(w http.ResponseWriter, req treemux.Request) error {
@@ -30,7 +34,7 @@ func (*UserHandler) Current(w http.ResponseWriter, req treemux.Request) error {
 	})
 }
 
-func (UserHandler) Create(w http.ResponseWriter, req treemux.Request) error {
+func (h UserHandler) Create(w http.ResponseWriter, req treemux.Request) error {
 	ctx := req.Context()
 
 	var in struct {
@@ -53,13 +57,13 @@ func (UserHandler) Create(w http.ResponseWriter, req treemux.Request) error {
 		return err
 	}
 
-	if _, err := app.DB().NewInsert().
+	if _, err := h.app.DB().NewInsert().
 		Model(user).
 		Exec(ctx); err != nil {
 		return err
 	}
 
-	if err := setUserToken(user); err != nil {
+	if err := setUserToken(h.app, user); err != nil {
 		return err
 	}
 
@@ -87,7 +91,7 @@ func (h UserHandler) Login(w http.ResponseWriter, req treemux.Request) error {
 	}
 
 	user := new(User)
-	if err := app.DB().NewSelect().
+	if err := h.app.DB().NewSelect().
 		Model(user).
 		Where("email = ?", in.User.Email).
 		Scan(ctx); err != nil {
@@ -98,7 +102,7 @@ func (h UserHandler) Login(w http.ResponseWriter, req treemux.Request) error {
 		return err
 	}
 
-	if err := setUserToken(user); err != nil {
+	if err := setUserToken(h.app, user); err != nil {
 		return err
 	}
 
@@ -107,7 +111,7 @@ func (h UserHandler) Login(w http.ResponseWriter, req treemux.Request) error {
 	})
 }
 
-func (UserHandler) Update(w http.ResponseWriter, req treemux.Request) error {
+func (h UserHandler) Update(w http.ResponseWriter, req treemux.Request) error {
 	ctx := req.Context()
 	authUser := UserFromContext(ctx)
 
@@ -131,7 +135,7 @@ func (UserHandler) Update(w http.ResponseWriter, req treemux.Request) error {
 		return err
 	}
 
-	if _, err = app.DB().NewUpdate().
+	if _, err = h.app.DB().NewUpdate().
 		Model(authUser).
 		Set("email = ?", user.Email).
 		Set("username = ?", user.Username).
@@ -150,12 +154,12 @@ func (UserHandler) Update(w http.ResponseWriter, req treemux.Request) error {
 	})
 }
 
-func (UserHandler) Profile(w http.ResponseWriter, req treemux.Request) error {
+func (h UserHandler) Profile(w http.ResponseWriter, req treemux.Request) error {
 	ctx := req.Context()
 
 	followingColumn := func(q *bun.SelectQuery) *bun.SelectQuery {
 		if authUser, ok := ctx.Value(userCtxKey{}).(*User); ok {
-			subq := app.DB().NewSelect().
+			subq := h.app.DB().NewSelect().
 				Model((*FollowUser)(nil)).
 				Where("fu.followed_user_id = u.id").
 				Where("fu.user_id = ?", authUser.ID)
@@ -169,7 +173,7 @@ func (UserHandler) Profile(w http.ResponseWriter, req treemux.Request) error {
 	}
 
 	user := new(User)
-	if err := app.DB().NewSelect().
+	if err := h.app.DB().NewSelect().
 		Model(user).
 		ColumnExpr("u.*").
 		Apply(followingColumn).
@@ -183,11 +187,11 @@ func (UserHandler) Profile(w http.ResponseWriter, req treemux.Request) error {
 	})
 }
 
-func (UserHandler) Follow(w http.ResponseWriter, req treemux.Request) error {
+func (h UserHandler) Follow(w http.ResponseWriter, req treemux.Request) error {
 	ctx := req.Context()
 	authUser := UserFromContext(ctx)
 
-	user, err := SelectUserByUsername(ctx, req.Param("username"))
+	user, err := SelectUserByUsername(ctx, h.app, req.Param("username"))
 	if err != nil {
 		return err
 	}
@@ -196,7 +200,7 @@ func (UserHandler) Follow(w http.ResponseWriter, req treemux.Request) error {
 		UserID:         authUser.ID,
 		FollowedUserID: user.ID,
 	}
-	if _, err := app.DB().NewInsert().
+	if _, err := h.app.DB().NewInsert().
 		Model(followUser).
 		Exec(ctx); err != nil {
 		return err
@@ -212,12 +216,12 @@ func (h UserHandler) Unfollow(w http.ResponseWriter, req treemux.Request) error 
 	ctx := req.Context()
 	authUser := UserFromContext(ctx)
 
-	user, err := SelectUserByUsername(ctx, req.Param("username"))
+	user, err := SelectUserByUsername(ctx, h.app, req.Param("username"))
 	if err != nil {
 		return err
 	}
 
-	if _, err := app.DB().NewDelete().
+	if _, err := h.app.DB().NewDelete().
 		Model((*FollowUser)(nil)).
 		Where("user_id = ?", authUser.ID).
 		Where("followed_user_id = ?", user.ID).
@@ -231,8 +235,8 @@ func (h UserHandler) Unfollow(w http.ResponseWriter, req treemux.Request) error 
 	})
 }
 
-func setUserToken(user *User) error {
-	token, err := CreateUserToken(user.ID, 24*time.Hour)
+func setUserToken(app *app.App, user *User) error {
+	token, err := CreateUserToken(app, user.ID, 24*time.Hour)
 	if err != nil {
 		return err
 	}

@@ -8,17 +8,21 @@ import (
 	"github.com/vmihailenco/treemux"
 )
 
-type TagHandler struct{}
-
-func NewTagHandler() TagHandler {
-	return TagHandler{}
+type TagHandler struct {
+	app *app.App
 }
 
-func (TagHandler) List(w http.ResponseWriter, req treemux.Request) error {
+func NewTagHandler(app *app.App) TagHandler {
+	return TagHandler{
+		app: app,
+	}
+}
+
+func (h TagHandler) List(w http.ResponseWriter, req treemux.Request) error {
 	ctx := req.Context()
 
 	tags := make([]string, 0)
-	if err := app.DB().NewSelect().
+	if err := h.app.DB().NewSelect().
 		Model((*ArticleTag)(nil)).
 		ColumnExpr("tag").
 		GroupExpr("tag").

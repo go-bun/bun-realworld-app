@@ -8,15 +8,16 @@ import (
 
 func init() {
 	app.OnStart("org.initRoutes", func(ctx context.Context, app *app.App) error {
-		userHandler := NewUserHandler()
+		middleware := NewMiddleware(app)
+		userHandler := NewUserHandler(app)
 
-		g := app.APIRouter().WithMiddleware(UserMiddleware)
+		g := app.APIRouter().WithMiddleware(middleware.User)
 
 		g.POST("/users", userHandler.Create)
 		g.POST("/users/login", userHandler.Login)
 		g.GET("/profiles/:username", userHandler.Profile)
 
-		g = g.WithMiddleware(MustUserMiddleware)
+		g = g.WithMiddleware(middleware.MustUser)
 
 		g.GET("/user/", userHandler.Current)
 		g.PUT("/user/", userHandler.Update)

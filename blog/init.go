@@ -9,11 +9,12 @@ import (
 
 func init() {
 	app.OnStart("blog.initRoutes", func(ctx context.Context, app *app.App) error {
-		tagHandler := NewTagHandler()
-		articleHandler := NewArticleHandler()
-		commentHandler := NewCommentHandler()
+		middleware := org.NewMiddleware(app)
+		tagHandler := NewTagHandler(app)
+		articleHandler := NewArticleHandler(app)
+		commentHandler := NewCommentHandler(app)
 
-		g := app.APIRouter().WithMiddleware(org.UserMiddleware)
+		g := app.APIRouter().WithMiddleware(middleware.User)
 
 		g.GET("/tags/", tagHandler.List)
 
@@ -24,7 +25,7 @@ func init() {
 		g.GET("/articles/:slug/comments", commentHandler.List)
 		g.GET("/articles/:slug/comments/:id", commentHandler.Show)
 
-		g = g.WithMiddleware(org.MustUserMiddleware)
+		g = g.WithMiddleware(middleware.MustUser)
 
 		g.POST("/articles", articleHandler.Create)
 		g.PUT("/articles/:slug", articleHandler.Update)

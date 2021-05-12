@@ -3,8 +3,6 @@
 [![build workflow](https://github.com/go-bun/bun-realworld-app/actions/workflows/build.yml/badge.svg)](https://github.com/go-bun/bun-realworld-app/actions)
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/uptrace/bun-realworld-app)](https://pkg.go.dev/github.com/uptrace/bun-realworld-app)
 
-> :heart: [**Uptrace.dev** - distributed traces, logs, and errors in one place](https://uptrace.dev)
-
 ## Introduction
 
 This project implements RealWorld JSON API as specified in the

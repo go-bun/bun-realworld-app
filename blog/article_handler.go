@@ -16,22 +16,26 @@ import (
 
 const kb = 10
 
-type ArticleHandler struct{}
-
-func NewArticleHandler() ArticleHandler {
-	return ArticleHandler{}
+type ArticleHandler struct {
+	app *app.App
 }
 
-func (ArticleHandler) List(w http.ResponseWriter, req treemux.Request) error {
+func NewArticleHandler(app *app.App) ArticleHandler {
+	return ArticleHandler{
+		app: app,
+	}
+}
+
+func (h ArticleHandler) List(w http.ResponseWriter, req treemux.Request) error {
 	ctx := req.Context()
 
-	f, err := decodeArticleFilter(req)
+	f, err := decodeArticleFilter(h.app, req)
 	if err != nil {
 		return err
 	}
 
 	articles := make([]*Article, 0)
-	if err := app.DB().NewSelect().
+	if err := h.app.DB().NewSelect().
 		Model(&articles).
 		ColumnExpr("?TableColumns").
 		Apply(f.query).
@@ -47,15 +51,15 @@ func (ArticleHandler) List(w http.ResponseWriter, req treemux.Request) error {
 	})
 }
 
-func (ArticleHandler) Show(w http.ResponseWriter, req treemux.Request) error {
+func (h ArticleHandler) Show(w http.ResponseWriter, req treemux.Request) error {
 	ctx := req.Context()
 
-	f, err := decodeArticleFilter(req)
+	f, err := decodeArticleFilter(h.app, req)
 	if err != nil {
 		return err
 	}
 
-	article, err := selectArticleByFilter(ctx, f)
+	article, err := selectArticleByFilter(ctx, h.app, f)
 	if err != nil {
 		return err
 	}
@@ -65,17 +69,17 @@ func (ArticleHandler) Show(w http.ResponseWriter, req treemux.Request) error {
 	})
 }
 
-func (ArticleHandler) Feed(w http.ResponseWriter, req treemux.Request) error {
+func (h ArticleHandler) Feed(w http.ResponseWriter, req treemux.Request) error {
 	ctx := req.Context()
 
-	f, err := decodeArticleFilter(req)
+	f, err := decodeArticleFilter(h.app, req)
 	if err != nil {
 		return err
 	}
 	f.Feed = true
 
 	articles := make([]*Article, 0)
-	if err := app.DB().NewSelect().
+	if err := h.app.DB().NewSelect().
 		Model(&articles).
 		ColumnExpr("?TableColumns").
 		Apply(f.query).
@@ -89,7 +93,7 @@ func (ArticleHandler) Feed(w http.ResponseWriter, req treemux.Request) error {
 	})
 }
 
-func (ArticleHandler) Create(w http.ResponseWriter, req treemux.Request) error {
+func (h ArticleHandler) Create(w http.ResponseWriter, req treemux.Request) error {
 	ctx := req.Context()
 	user := org.UserFromContext(ctx)
 
@@ -109,16 +113,16 @@ func (ArticleHandler) Create(w http.ResponseWriter, req treemux.Request) error {
 
 	article.Slug = makeSlug(article.Title)
 	article.AuthorID = user.ID
-	article.CreatedAt = app.Clock().Now()
-	article.UpdatedAt = app.Clock().Now()
+	article.CreatedAt = h.app.Clock().Now()
+	article.UpdatedAt = h.app.Clock().Now()
 
-	if _, err := app.DB().NewInsert().
+	if _, err := h.app.DB().NewInsert().
 		Model(article).
 		Exec(ctx); err != nil {
 		return err
 	}
 
-	if err := createTags(ctx, article); err != nil {
+	if err := createTags(ctx, h.app, article); err != nil {
 		return err
 	}
 
@@ -128,7 +132,7 @@ func (ArticleHandler) Create(w http.ResponseWriter, req treemux.Request) error {
 	})
 }
 
-func (ArticleHandler) Update(w http.ResponseWriter, req treemux.Request) error {
+func (h ArticleHandler) Update(w http.ResponseWriter, req treemux.Request) error {
 	ctx := req.Context()
 	user := org.UserFromContext(ctx)
 
@@ -146,26 +150,26 @@ func (ArticleHandler) Update(w http.ResponseWriter, req treemux.Request) error {
 
 	article := in.Article
 
-	if _, err := app.DB().NewUpdate().
+	if _, err := h.app.DB().NewUpdate().
 		Model(article).
 		Set("title = ?", article.Title).
 		Set("description = ?", article.Description).
 		Set("body = ?", article.Body).
-		Set("updated_at = ?", app.Clock().Now()).
+		Set("updated_at = ?", h.app.Clock().Now()).
 		Where("slug = ?", req.Param("slug")).
 		Returning("*").
 		Exec(ctx); err != nil {
 		return err
 	}
 
-	if _, err := app.DB().NewDelete().
+	if _, err := h.app.DB().NewDelete().
 		Model((*ArticleTag)(nil)).
 		Where("article_id = ?", article.ID).
 		Exec(ctx); err != nil {
 		return err
 	}
 
-	if err := createTags(ctx, article); err != nil {
+	if err := createTags(ctx, h.app, article); err != nil {
 		return err
 	}
 
@@ -179,11 +183,11 @@ func (ArticleHandler) Update(w http.ResponseWriter, req treemux.Request) error {
 	})
 }
 
-func (ArticleHandler) Delete(w http.ResponseWriter, req treemux.Request) error {
+func (h ArticleHandler) Delete(w http.ResponseWriter, req treemux.Request) error {
 	ctx := req.Context()
 	user := org.UserFromContext(ctx)
 
-	if _, err := app.DB().NewDelete().
+	if _, err := h.app.DB().NewDelete().
 		Model((*Article)(nil)).
 		Where("author_id = ?", user.ID).
 		Where("slug = ?", req.Param("slug")).
@@ -194,16 +198,16 @@ func (ArticleHandler) Delete(w http.ResponseWriter, req treemux.Request) error {
 	return nil
 }
 
-func (ArticleHandler) Favorite(w http.ResponseWriter, req treemux.Request) error {
+func (h ArticleHandler) Favorite(w http.ResponseWriter, req treemux.Request) error {
 	ctx := req.Context()
 	user := org.UserFromContext(ctx)
 
-	f, err := decodeArticleFilter(req)
+	f, err := decodeArticleFilter(h.app, req)
 	if err != nil {
 		return err
 	}
 
-	article, err := selectArticleByFilter(ctx, f)
+	article, err := selectArticleByFilter(ctx, h.app, f)
 	if err != nil {
 		return err
 	}
@@ -212,7 +216,7 @@ func (ArticleHandler) Favorite(w http.ResponseWriter, req treemux.Request) error
 		UserID:    user.ID,
 		ArticleID: article.ID,
 	}
-	res, err := app.DB().NewInsert().
+	res, err := h.app.DB().NewInsert().
 		Model(favoriteArticle).
 		Exec(ctx)
 	if err != nil {
@@ -233,21 +237,21 @@ func (ArticleHandler) Favorite(w http.ResponseWriter, req treemux.Request) error
 	})
 }
 
-func (ArticleHandler) Unfavorite(w http.ResponseWriter, req treemux.Request) error {
+func (h ArticleHandler) Unfavorite(w http.ResponseWriter, req treemux.Request) error {
 	ctx := req.Context()
 	user := org.UserFromContext(ctx)
 
-	f, err := decodeArticleFilter(req)
+	f, err := decodeArticleFilter(h.app, req)
 	if err != nil {
 		return err
 	}
 
-	article, err := selectArticleByFilter(ctx, f)
+	article, err := selectArticleByFilter(ctx, h.app, f)
 	if err != nil {
 		return err
 	}
 
-	res, err := app.DB().NewDelete().
+	res, err := h.app.DB().NewDelete().
 		Model((*FavoriteArticle)(nil)).
 		Where("user_id = ?", user.ID).
 		Where("article_id = ?", article.ID).

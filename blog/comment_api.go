@@ -10,16 +10,20 @@ import (
 	"github.com/vmihailenco/treemux"
 )
 
-type CommentHandler struct{}
-
-func NewCommentHandler() CommentHandler {
-	return CommentHandler{}
+type CommentHandler struct {
+	app *app.App
 }
 
-func (CommentHandler) List(w http.ResponseWriter, req treemux.Request) error {
+func NewCommentHandler(app *app.App) CommentHandler {
+	return CommentHandler{
+		app: app,
+	}
+}
+
+func (h CommentHandler) List(w http.ResponseWriter, req treemux.Request) error {
 	ctx := req.Context()
 
-	article, err := SelectArticle(ctx, req.Param("slug"))
+	article, err := SelectArticle(ctx, h.app, req.Param("slug"))
 	if err != nil {
 		return err
 	}
@@ -30,11 +34,11 @@ func (CommentHandler) List(w http.ResponseWriter, req treemux.Request) error {
 	}
 
 	comments := make([]*Comment, 0)
-	if err := app.DB().NewSelect().
+	if err := h.app.DB().NewSelect().
 		Model(&comments).
 		ColumnExpr("c.*").
 		Relation("Author").
-		Apply(authorFollowingColumn(userID)).
+		Apply(authorFollowingColumn(h.app, userID)).
 		Where("article_id = ?", article.ID).
 		Scan(ctx); err != nil {
 		return err
@@ -45,10 +49,10 @@ func (CommentHandler) List(w http.ResponseWriter, req treemux.Request) error {
 	})
 }
 
-func (CommentHandler) Show(w http.ResponseWriter, req treemux.Request) error {
+func (h CommentHandler) Show(w http.ResponseWriter, req treemux.Request) error {
 	ctx := req.Context()
 
-	article, err := SelectArticle(ctx, req.Param("slug"))
+	article, err := SelectArticle(ctx, h.app, req.Param("slug"))
 	if err != nil {
 		return err
 	}
@@ -64,11 +68,11 @@ func (CommentHandler) Show(w http.ResponseWriter, req treemux.Request) error {
 	}
 
 	comment := new(Comment)
-	if err := app.DB().NewSelect().
+	if err := h.app.DB().NewSelect().
 		Model(comment).
 		ColumnExpr("c.*").
 		Relation("Author").
-		Apply(authorFollowingColumn(userID)).
+		Apply(authorFollowingColumn(h.app, userID)).
 		Where("c.id = ?", id).
 		Where("article_id = ?", article.ID).
 		Scan(ctx); err != nil {
@@ -80,11 +84,11 @@ func (CommentHandler) Show(w http.ResponseWriter, req treemux.Request) error {
 	})
 }
 
-func (CommentHandler) Create(w http.ResponseWriter, req treemux.Request) error {
+func (h CommentHandler) Create(w http.ResponseWriter, req treemux.Request) error {
 	ctx := req.Context()
 	user := org.UserFromContext(ctx)
 
-	article, err := SelectArticle(ctx, req.Param("slug"))
+	article, err := SelectArticle(ctx, h.app, req.Param("slug"))
 	if err != nil {
 		return err
 	}
@@ -105,10 +109,10 @@ func (CommentHandler) Create(w http.ResponseWriter, req treemux.Request) error {
 
 	comment.AuthorID = user.ID
 	comment.ArticleID = article.ID
-	comment.CreatedAt = app.Clock().Now()
-	comment.UpdatedAt = app.Clock().Now()
+	comment.CreatedAt = h.app.Clock().Now()
+	comment.UpdatedAt = h.app.Clock().Now()
 
-	if _, err := app.DB().NewInsert().
+	if _, err := h.app.DB().NewInsert().
 		Model(comment).
 		Exec(ctx); err != nil {
 		return err
@@ -120,16 +124,16 @@ func (CommentHandler) Create(w http.ResponseWriter, req treemux.Request) error {
 	})
 }
 
-func (CommentHandler) Delete(w http.ResponseWriter, req treemux.Request) error {
+func (h CommentHandler) Delete(w http.ResponseWriter, req treemux.Request) error {
 	ctx := req.Context()
 	user := org.UserFromContext(ctx)
 
-	article, err := SelectArticle(ctx, req.Param("slug"))
+	article, err := SelectArticle(ctx, h.app, req.Param("slug"))
 	if err != nil {
 		return err
 	}
 
-	if _, err := app.DB().NewDelete().
+	if _, err := h.app.DB().NewDelete().
 		Model((*Comment)(nil)).
 		Where("author_id = ?", user.ID).
 		Where("article_id = ?", article.ID).

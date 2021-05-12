@@ -2,6 +2,7 @@ package blog_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -9,10 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/benbjohnson/clock"
-	"github.com/uptrace/bun-realworld-app/app"
 	"github.com/uptrace/bun-realworld-app/org"
-	. "github.com/uptrace/bun-realworld-app/testbed"
+	"github.com/uptrace/bun-realworld-app/testbed"
 	"github.com/uptrace/bun/fixture"
 
 	. "github.com/onsi/ginkgo"
@@ -25,26 +24,12 @@ func TestGinkgo(t *testing.T) {
 	RunSpecs(t, "blog")
 }
 
-var ctx context.Context
-
-func init() {
-	ctx = context.Background()
-
-	cfg, err := app.ReadConfig("org_test", "test")
-	if err != nil {
-		panic(err)
-	}
-
-	if err := app.StartConfig(ctx, cfg); err != nil {
-		panic(err)
-	}
-
-	mock := clock.NewMock()
-	mock.Set(time.Date(2020, time.January, 1, 2, 3, 4, 5000, time.UTC))
-	app.TheApp.SetClock(mock)
-}
-
 var _ = Describe("createArticle", func() {
+	var ctx context.Context
+	var app *testbed.TestApp
+
+	var userClient testbed.Client
+
 	var data map[string]interface{}
 	var slug string
 	var user *org.User
@@ -61,14 +46,16 @@ var _ = Describe("createArticle", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		url := fmt.Sprintf("/api/profiles/%s/follow", followedUser.Username)
-		resp := PostWithToken(url, "", user.ID)
-		_ = ParseJSON(resp, 200)
+		resp := userClient.Post(url, "")
+		_ = parseJSON(resp, 200)
 
 		return followedUser
 	}
 
 	BeforeEach(func() {
-		ResetAll(ctx)
+		ctx = context.Background()
+		app = testbed.StartApp(ctx)
+		app.TruncateDB(ctx)
 
 		helloArticleKeys = Keys{
 			"title":          Equal("Hello world"),
@@ -83,7 +70,7 @@ var _ = Describe("createArticle", func() {
 			"updatedAt":      Equal(app.Clock().Now().Format(time.RFC3339Nano)),
 		}
 
-		favoritedArticleKeys = ExtendKeys(helloArticleKeys, Keys{
+		favoritedArticleKeys = testbed.ExtendKeys(helloArticleKeys, Keys{
 			"favorited":      Equal(true),
 			"favoritesCount": Equal(float64(1)),
 		})
@@ -101,21 +88,21 @@ var _ = Describe("createArticle", func() {
 			"updatedAt":      Equal(app.Clock().Now().Format(time.RFC3339Nano)),
 		}
 
-		db := app.DB()
-		db.RegisterModel((*org.User)(nil))
+		app.DB().RegisterModel((*org.User)(nil))
 
-		loader := fixture.NewLoader(db)
+		loader := fixture.NewLoader(app.DB())
 		err := loader.Load(ctx, os.DirFS("testdata"), "fixture.yaml")
 		Expect(err).NotTo(HaveOccurred())
 
 		user = loader.MustGet("User", "current").(*org.User)
+		userClient = app.Client().WithToken(user.ID)
 	})
 
 	BeforeEach(func() {
 		json := `{"article": {"title": "Hello world", "description": "Hello world article description!", "body": "Hello world article body.", "tagList": ["greeting", "welcome", "salut"]}}`
-		resp := PostWithToken("/api/articles", json, user.ID)
+		resp := userClient.PostJSON("/api/articles", json)
 
-		data = ParseJSON(resp, http.StatusOK)
+		data = parseJSON(resp, http.StatusOK)
 		slug = data["article"].(map[string]interface{})["slug"].(string)
 	})
 
@@ -128,19 +115,19 @@ var _ = Describe("createArticle", func() {
 			followedUser := createFollowedUser()
 
 			json := `{"article": {"title": "Foo bar", "description": "Foo bar article description!", "body": "Foo bar article body.", "tagList": ["foobar", "variable"]}}`
-			resp := PostWithToken("/api/articles", json, followedUser.ID)
+			resp := app.Client().WithToken(followedUser.ID).PostJSON("/api/articles", json)
 
-			_ = ParseJSON(resp, http.StatusOK)
+			_ = parseJSON(resp, http.StatusOK)
 
-			resp = GetWithToken("/api/articles/feed", user.ID)
-			data = ParseJSON(resp, http.StatusOK)
+			resp = userClient.Get("/api/articles/feed")
+			data = parseJSON(resp, http.StatusOK)
 		})
 
 		It("returns article", func() {
 			articles := data["articles"].([]interface{})
 
 			Expect(articles).To(HaveLen(1))
-			followedAuthorKeys := ExtendKeys(fooArticleKeys, Keys{
+			followedAuthorKeys := testbed.ExtendKeys(fooArticleKeys, Keys{
 				"author": Equal(map[string]interface{}{
 					"following": true,
 					"username":  "FollowedUser",
@@ -155,9 +142,9 @@ var _ = Describe("createArticle", func() {
 	Describe("showArticle", func() {
 		BeforeEach(func() {
 			url := fmt.Sprintf("/api/articles/%s", slug)
-			resp := Get(url)
+			resp := app.Client().Get(url)
 
-			data = ParseJSON(resp, http.StatusOK)
+			data = parseJSON(resp, http.StatusOK)
 		})
 
 		It("returns article", func() {
@@ -168,9 +155,9 @@ var _ = Describe("createArticle", func() {
 	Describe("listArticles", func() {
 		BeforeEach(func() {
 			url := fmt.Sprintf("/api/articles/%s?author=CurrentUser", slug)
-			resp := Get(url)
+			resp := app.Client().Get(url)
 
-			data = ParseJSON(resp, http.StatusOK)
+			data = parseJSON(resp, http.StatusOK)
 		})
 
 		It("returns articles by author", func() {
@@ -181,12 +168,12 @@ var _ = Describe("createArticle", func() {
 	Describe("favoriteArticle", func() {
 		BeforeEach(func() {
 			url := fmt.Sprintf("/api/articles/%s/favorite", slug)
-			resp := PostWithToken(url, "", user.ID)
-			_ = ParseJSON(resp, 200)
+			resp := userClient.Post(url, "")
+			_ = parseJSON(resp, 200)
 
 			url = fmt.Sprintf("/api/articles/%s", slug)
-			resp = GetWithToken(url, user.ID)
-			data = ParseJSON(resp, 200)
+			resp = userClient.Get(url)
+			data = parseJSON(resp, 200)
 		})
 
 		It("returns favorited article", func() {
@@ -196,12 +183,12 @@ var _ = Describe("createArticle", func() {
 		Describe("unfavoriteArticle", func() {
 			BeforeEach(func() {
 				url := fmt.Sprintf("/api/articles/%s/favorite", slug)
-				resp := DeleteWithToken(url, user.ID)
-				_ = ParseJSON(resp, 200)
+				resp := userClient.Delete(url)
+				_ = parseJSON(resp, 200)
 
 				url = fmt.Sprintf("/api/articles/%s", slug)
-				resp = GetWithToken(url, user.ID)
-				data = ParseJSON(resp, 200)
+				resp = userClient.Get(url)
+				data = parseJSON(resp, 200)
 			})
 
 			It("returns article", func() {
@@ -213,11 +200,11 @@ var _ = Describe("createArticle", func() {
 	Describe("listArticles", func() {
 		BeforeEach(func() {
 			url := fmt.Sprintf("/api/articles/%s/favorite", slug)
-			resp := PostWithToken(url, "", user.ID)
-			_ = ParseJSON(resp, 200)
+			resp := userClient.Post(url, "")
+			_ = parseJSON(resp, 200)
 
-			resp = GetWithToken("/api/articles", user.ID)
-			data = ParseJSON(resp, 200)
+			resp = userClient.Get("/api/articles")
+			data = parseJSON(resp, 200)
 		})
 
 		It("returns articles", func() {
@@ -234,12 +221,12 @@ var _ = Describe("createArticle", func() {
 			json := `{"article": {"title": "Foo bar", "description": "Foo bar article description!", "body": "Foo bar article body.", "tagList": []}}`
 
 			url := fmt.Sprintf("/api/articles/%s", slug)
-			resp := PutWithToken(url, json, user.ID)
-			data = ParseJSON(resp, 200)
+			resp := userClient.PutJSON(url, json)
+			data = parseJSON(resp, 200)
 		})
 
 		It("returns article", func() {
-			updatedArticleKeys := ExtendKeys(fooArticleKeys, Keys{
+			updatedArticleKeys := testbed.ExtendKeys(fooArticleKeys, Keys{
 				"slug":      HavePrefix("hello-world-"),
 				"tagList":   Equal([]interface{}{}),
 				"updatedAt": Equal(app.Clock().Now().Format(time.RFC3339Nano)),
@@ -253,7 +240,7 @@ var _ = Describe("createArticle", func() {
 
 		BeforeEach(func() {
 			url := fmt.Sprintf("/api/articles/%s", slug)
-			resp = DeleteWithToken(url, user.ID)
+			resp = userClient.Delete(url)
 		})
 
 		It("deletes article", func() {
@@ -279,8 +266,8 @@ var _ = Describe("createArticle", func() {
 
 			json := `{"comment": {"body": "First comment."}}`
 			url := fmt.Sprintf("/api/articles/%s/comments", slug)
-			resp := PostWithToken(url, json, followedUser.ID)
-			data = ParseJSON(resp, 200)
+			resp := app.Client().WithToken(followedUser.ID).PostJSON(url, json)
+			data = parseJSON(resp, 200)
 
 			commentID = uint64(data["comment"].(map[string]interface{})["id"].(float64))
 		})
@@ -292,8 +279,8 @@ var _ = Describe("createArticle", func() {
 		Describe("showComment", func() {
 			BeforeEach(func() {
 				url := fmt.Sprintf("/api/articles/%s/comments/%d", slug, commentID)
-				resp := Get(url)
-				data = ParseJSON(resp, 200)
+				resp := app.Client().Get(url)
+				data = parseJSON(resp, 200)
 			})
 
 			It("returns comment to article", func() {
@@ -304,12 +291,12 @@ var _ = Describe("createArticle", func() {
 		Describe("showComment with authentication", func() {
 			BeforeEach(func() {
 				url := fmt.Sprintf("/api/articles/%s/comments/%d", slug, commentID)
-				resp := GetWithToken(url, user.ID)
-				data = ParseJSON(resp, 200)
+				resp := userClient.Get(url)
+				data = parseJSON(resp, 200)
 			})
 
 			It("returns comment to article", func() {
-				followedCommentKeys := ExtendKeys(commentKeys, Keys{
+				followedCommentKeys := testbed.ExtendKeys(commentKeys, Keys{
 					"author": Equal(map[string]interface{}{"following": true, "username": "FollowedUser", "bio": "", "image": ""}),
 				})
 				Expect(data["comment"]).To(MatchAllKeys(followedCommentKeys))
@@ -319,12 +306,12 @@ var _ = Describe("createArticle", func() {
 		Describe("listArticleComments", func() {
 			BeforeEach(func() {
 				url := fmt.Sprintf("/api/articles/%s/comments", slug)
-				resp := GetWithToken(url, user.ID)
-				data = ParseJSON(resp, 200)
+				resp := userClient.Get(url)
+				data = parseJSON(resp, 200)
 			})
 
 			It("returns article comments", func() {
-				followedCommentKeys := ExtendKeys(commentKeys, Keys{
+				followedCommentKeys := testbed.ExtendKeys(commentKeys, Keys{
 					"author": Equal(map[string]interface{}{"following": true, "username": "FollowedUser", "bio": "", "image": ""}),
 				})
 				Expect(data["comments"].([]interface{})[0]).To(MatchAllKeys(followedCommentKeys))
@@ -336,7 +323,7 @@ var _ = Describe("createArticle", func() {
 
 			BeforeEach(func() {
 				url := fmt.Sprintf("/api/articles/%s/comments/%d", slug, commentID)
-				resp = DeleteWithToken(url, followedUser.ID)
+				resp = app.Client().WithToken(followedUser.ID).Delete(url)
 			})
 
 			It("deletes comment", func() {
@@ -347,8 +334,8 @@ var _ = Describe("createArticle", func() {
 
 	Describe("listTags", func() {
 		BeforeEach(func() {
-			resp := Get("/api/tags/")
-			data = ParseJSON(resp, 200)
+			resp := app.Client().Get("/api/tags/")
+			data = parseJSON(resp, 200)
 		})
 
 		It("returns tags", func() {
@@ -360,3 +347,11 @@ var _ = Describe("createArticle", func() {
 		})
 	})
 })
+
+func parseJSON(resp *httptest.ResponseRecorder, code int) map[string]interface{} {
+	out := make(map[string]interface{})
+	err := json.Unmarshal(resp.Body.Bytes(), &out)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(resp.Code).To(Equal(code))
+	return out
+}

@@ -2,13 +2,14 @@ package org_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
-	"github.com/uptrace/bun-realworld-app/app"
 	"github.com/uptrace/bun-realworld-app/org"
-	. "github.com/uptrace/bun-realworld-app/testbed"
+	"github.com/uptrace/bun-realworld-app/testbed"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -20,28 +21,16 @@ func TestOrg(t *testing.T) {
 	RunSpecs(t, "org")
 }
 
-var ctx context.Context
-
-func init() {
-	ctx = context.Background()
-
-	cfg, err := app.ReadConfig("org_test", "test")
-	if err != nil {
-		panic(err)
-	}
-
-	if err := app.StartConfig(ctx, cfg); err != nil {
-		panic(err)
-	}
-}
-
 var _ = Describe("createUser", func() {
+	var ctx context.Context
+	var testapp *testbed.TestApp
 	var data map[string]interface{}
-
 	var userKeys Keys
 
 	BeforeEach(func() {
-		ResetAll(ctx)
+		ctx = context.Background()
+		testapp = testbed.StartApp(ctx)
+		testapp.TruncateDB(ctx)
 
 		userKeys = Keys{
 			"username":  Equal("wangzitian0"),
@@ -53,9 +42,13 @@ var _ = Describe("createUser", func() {
 		}
 
 		json := `{"user": {"username": "wangzitian0","email": "wzt@gg.cn","password": "jakejxke", "image": "img", "bio": "bar"}}`
-		resp := Post("/api/users", json)
+		resp := testapp.Client().PostJSON("/api/users", json)
 
-		data = ParseJSON(resp, http.StatusOK)
+		data = parseJSON(resp, http.StatusOK)
+	})
+
+	AfterEach(func() {
+		testapp.Stop()
 	})
 
 	It("creates new user", func() {
@@ -67,13 +60,13 @@ var _ = Describe("createUser", func() {
 
 		BeforeEach(func() {
 			json := `{"user": {"email": "wzt@gg.cn","password": "jakejxke"}}`
-			resp := Post("/api/users/login", json)
+			resp := testapp.Client().PostJSON("/api/users/login", json)
 
-			data = ParseJSON(resp, http.StatusOK)
+			data = parseJSON(resp, http.StatusOK)
 
 			username := data["user"].(map[string]interface{})["username"].(string)
 			var err error
-			user, err = org.SelectUserByUsername(context.Background(), username)
+			user, err = org.SelectUserByUsername(ctx, testapp.App, username)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -83,8 +76,8 @@ var _ = Describe("createUser", func() {
 
 		Describe("currentUser", func() {
 			BeforeEach(func() {
-				resp := GetWithToken("/api/user/", user.ID)
-				data = ParseJSON(resp, http.StatusOK)
+				resp := testapp.Client().WithToken(user.ID).Get("/api/user/")
+				data = parseJSON(resp, http.StatusOK)
 			})
 
 			It("returns logged in user", func() {
@@ -95,8 +88,8 @@ var _ = Describe("createUser", func() {
 		Describe("updateUser", func() {
 			BeforeEach(func() {
 				json := `{"user": {"username": "hello","email": "foo@bar.com", "image": "bar", "bio": "foo"}}`
-				resp := PutWithToken("/api/user/", json, user.ID)
-				data = ParseJSON(resp, http.StatusOK)
+				resp := testapp.Client().WithToken(user.ID).PutJSON("/api/user/", json)
+				data = parseJSON(resp, http.StatusOK)
 			})
 
 			It("returns updated user", func() {
@@ -117,19 +110,19 @@ var _ = Describe("createUser", func() {
 
 			BeforeEach(func() {
 				json := `{"user": {"username": "hello","email": "foo@bar.com","password": "pwd"}}`
-				resp := Post("/api/users", json)
+				resp := testapp.Client().PostJSON("/api/users", json)
 
-				data = ParseJSON(resp, http.StatusOK)
+				data = parseJSON(resp, http.StatusOK)
 
 				username = data["user"].(map[string]interface{})["username"].(string)
 
 				url := fmt.Sprintf("/api/profiles/%s/follow", username)
-				resp = PostWithToken(url, "", user.ID)
-				_ = ParseJSON(resp, 200)
+				resp = testapp.Client().WithToken(user.ID).Post(url, "")
+				_ = parseJSON(resp, 200)
 
 				url = fmt.Sprintf("/api/profiles/%s", username)
-				resp = GetWithToken(url, user.ID)
-				data = ParseJSON(resp, 200)
+				resp = testapp.Client().WithToken(user.ID).Get(url)
+				data = parseJSON(resp, 200)
 			})
 
 			It("returns followed profile", func() {
@@ -145,8 +138,8 @@ var _ = Describe("createUser", func() {
 			Describe("unfollowUser", func() {
 				BeforeEach(func() {
 					url := fmt.Sprintf("/api/profiles/%s/follow", username)
-					resp := DeleteWithToken(url, user.ID)
-					data = ParseJSON(resp, 200)
+					resp := testapp.Client().WithToken(user.ID).Delete(url)
+					data = parseJSON(resp, 200)
 				})
 
 				It("returns profile", func() {
@@ -162,3 +155,11 @@ var _ = Describe("createUser", func() {
 		})
 	})
 })
+
+func parseJSON(resp *httptest.ResponseRecorder, code int) map[string]interface{} {
+	out := make(map[string]interface{})
+	err := json.Unmarshal(resp.Body.Bytes(), &out)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(resp.Code).To(Equal(code))
+	return out
+}

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/uptrace/bun-realworld-app/app"
 	"github.com/vmihailenco/treemux"
 )
 
@@ -26,24 +27,34 @@ func authToken(req treemux.Request) string {
 	return v
 }
 
-func UserMiddleware(next treemux.HandlerFunc) treemux.HandlerFunc {
+type Middleware struct {
+	app *app.App
+}
+
+func NewMiddleware(app *app.App) Middleware {
+	return Middleware{
+		app: app,
+	}
+}
+
+func (m Middleware) User(next treemux.HandlerFunc) treemux.HandlerFunc {
 	return func(w http.ResponseWriter, req treemux.Request) error {
 		ctx := req.Context()
 
 		token := authToken(req)
-		userID, err := decodeUserToken(token)
+		userID, err := decodeUserToken(m.app, token)
 		if err != nil {
 			ctx = context.WithValue(ctx, userErrCtxKey{}, err)
 			return next(w, req.WithContext(ctx))
 		}
 
-		user, err := SelectUser(ctx, userID)
+		user, err := SelectUser(ctx, m.app, userID)
 		if err != nil {
 			ctx = context.WithValue(ctx, userErrCtxKey{}, err)
 			return next(w, req.WithContext(ctx))
 		}
 
-		user.Token, err = CreateUserToken(user.ID, 24*time.Hour)
+		user.Token, err = CreateUserToken(m.app, user.ID, 24*time.Hour)
 		if err != nil {
 			ctx = context.WithValue(ctx, userErrCtxKey{}, err)
 			return next(w, req.WithContext(ctx))
@@ -54,7 +65,7 @@ func UserMiddleware(next treemux.HandlerFunc) treemux.HandlerFunc {
 	}
 }
 
-func MustUserMiddleware(next treemux.HandlerFunc) treemux.HandlerFunc {
+func (m Middleware) MustUser(next treemux.HandlerFunc) treemux.HandlerFunc {
 	return func(w http.ResponseWriter, req treemux.Request) error {
 		if err, ok := req.Context().Value(userErrCtxKey{}).(error); ok {
 			return err

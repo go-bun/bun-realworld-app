@@ -9,6 +9,8 @@ import (
 )
 
 type ArticleFilter struct {
+	app *app.App
+
 	UserID    uint64
 	Author    string
 	Tag       string
@@ -18,11 +20,13 @@ type ArticleFilter struct {
 	urlstruct.Pager
 }
 
-func decodeArticleFilter(req treemux.Request) (*ArticleFilter, error) {
+func decodeArticleFilter(app *app.App, req treemux.Request) (*ArticleFilter, error) {
 	ctx := req.Context()
 	query := req.URL.Query()
 
 	f := &ArticleFilter{
+		app: app,
+
 		Tag:       query.Get("tag"),
 		Author:    query.Get("author"),
 		Favorited: query.Get("favorited"),
@@ -40,7 +44,7 @@ func (f *ArticleFilter) query(q *bun.SelectQuery) *bun.SelectQuery {
 	q = q.Relation("Author")
 
 	{
-		subq := app.DB().NewSelect().
+		subq := f.app.DB().NewSelect().
 			Model((*ArticleTag)(nil)).
 			ColumnExpr("array_agg(t.tag)::text[]").
 			Where("t.article_id = a.id")
@@ -51,7 +55,7 @@ func (f *ArticleFilter) query(q *bun.SelectQuery) *bun.SelectQuery {
 	if f.UserID == 0 {
 		q = q.ColumnExpr("false AS favorited")
 	} else {
-		subq := app.DB().NewSelect().
+		subq := f.app.DB().NewSelect().
 			Model((*FavoriteArticle)(nil)).
 			Where("fa.article_id = a.id").
 			Where("fa.user_id = ?", f.UserID)
@@ -59,10 +63,10 @@ func (f *ArticleFilter) query(q *bun.SelectQuery) *bun.SelectQuery {
 		q = q.ColumnExpr("EXISTS (?) AS favorited", subq)
 	}
 
-	q.Apply(authorFollowingColumn(f.UserID))
+	q.Apply(authorFollowingColumn(f.app, f.UserID))
 
 	{
-		subq := app.DB().NewSelect().
+		subq := f.app.DB().NewSelect().
 			Model((*FavoriteArticle)(nil)).
 			ColumnExpr("count(*)").
 			Where("fa.article_id = a.id")
@@ -75,7 +79,7 @@ func (f *ArticleFilter) query(q *bun.SelectQuery) *bun.SelectQuery {
 	}
 
 	if f.Tag != "" {
-		subq := app.DB().NewSelect().
+		subq := f.app.DB().NewSelect().
 			Model((*ArticleTag)(nil)).
 			Distinct().
 			ColumnExpr("t.article_id").
@@ -85,7 +89,7 @@ func (f *ArticleFilter) query(q *bun.SelectQuery) *bun.SelectQuery {
 	}
 
 	if f.Feed {
-		subq := app.DB().NewSelect().
+		subq := f.app.DB().NewSelect().
 			Model((*org.FollowUser)(nil)).
 			ColumnExpr("fu.followed_user_id").
 			Where("fu.user_id = ?", f.UserID)
@@ -98,7 +102,7 @@ func (f *ArticleFilter) query(q *bun.SelectQuery) *bun.SelectQuery {
 	return q
 }
 
-func authorFollowingColumn(userID uint64) func(*bun.SelectQuery) *bun.SelectQuery {
+func authorFollowingColumn(app *app.App, userID uint64) func(*bun.SelectQuery) *bun.SelectQuery {
 	return func(q *bun.SelectQuery) *bun.SelectQuery {
 		if userID == 0 {
 			q = q.ColumnExpr("false AS author__following")
@@ -110,7 +114,6 @@ func authorFollowingColumn(userID uint64) func(*bun.SelectQuery) *bun.SelectQuer
 
 			q = q.ColumnExpr("EXISTS (?) AS author__following", subq)
 		}
-
 		return q
 	}
 }
