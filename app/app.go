@@ -119,7 +119,7 @@ func (app *App) DB() *bun.DB {
 		db := bun.Open(sqldb, pgdialect.New())
 		// db.AddQueryHook(pgotel.TracingHook{})
 		if app.IsDebug() {
-			db.AddQueryHook(bundebug.NewQueryHook())
+			db.AddQueryHook(bundebug.NewQueryHook(bundebug.WithVerbose()))
 		}
 
 		app.db = db
