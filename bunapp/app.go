@@ -143,8 +143,7 @@ func (app *App) DB() *bun.DB {
 		config.PreferSimpleProtocol = true
 		sqldb := stdlib.OpenDB(*config)
 
-		db := bun.Open(sqldb, pgdialect.New())
-		// db.AddQueryHook(pgotel.TracingHook{})
+		db := bun.NewDB(sqldb, pgdialect.New())
 		if app.IsDebug() {
 			db.AddQueryHook(bundebug.NewQueryHook(bundebug.WithVerbose()))
 		}
