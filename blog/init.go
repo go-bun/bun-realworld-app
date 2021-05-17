@@ -3,12 +3,12 @@ package blog
 import (
 	"context"
 
-	"github.com/uptrace/bun-realworld-app/app"
+	"github.com/uptrace/bun-realworld-app/bunapp"
 	"github.com/uptrace/bun-realworld-app/org"
 )
 
 func init() {
-	app.OnStart("blog.initRoutes", func(ctx context.Context, app *app.App) error {
+	bunapp.OnStart("blog.initRoutes", func(ctx context.Context, app *bunapp.App) error {
 		middleware := org.NewMiddleware(app)
 		tagHandler := NewTagHandler(app)
 		articleHandler := NewArticleHandler(app)

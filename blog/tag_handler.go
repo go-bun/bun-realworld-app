@@ -4,15 +4,15 @@ import (
 	"database/sql"
 	"net/http"
 
-	"github.com/uptrace/bun-realworld-app/app"
+	"github.com/uptrace/bun-realworld-app/bunapp"
 	"github.com/vmihailenco/treemux"
 )
 
 type TagHandler struct {
-	app *app.App
+	app *bunapp.App
 }
 
-func NewTagHandler(app *app.App) TagHandler {
+func NewTagHandler(app *bunapp.App) TagHandler {
 	return TagHandler{
 		app: app,
 	}

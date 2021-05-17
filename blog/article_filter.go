@@ -3,13 +3,13 @@ package blog
 import (
 	"github.com/go-pg/urlstruct"
 	"github.com/uptrace/bun"
-	"github.com/uptrace/bun-realworld-app/app"
+	"github.com/uptrace/bun-realworld-app/bunapp"
 	"github.com/uptrace/bun-realworld-app/org"
 	"github.com/vmihailenco/treemux"
 )
 
 type ArticleFilter struct {
-	app *app.App
+	app *bunapp.App
 
 	UserID    uint64
 	Author    string
@@ -20,7 +20,7 @@ type ArticleFilter struct {
 	urlstruct.Pager
 }
 
-func decodeArticleFilter(app *app.App, req treemux.Request) (*ArticleFilter, error) {
+func decodeArticleFilter(app *bunapp.App, req treemux.Request) (*ArticleFilter, error) {
 	ctx := req.Context()
 	query := req.URL.Query()
 
@@ -102,7 +102,7 @@ func (f *ArticleFilter) query(q *bun.SelectQuery) *bun.SelectQuery {
 	return q
 }
 
-func authorFollowingColumn(app *app.App, userID uint64) func(*bun.SelectQuery) *bun.SelectQuery {
+func authorFollowingColumn(app *bunapp.App, userID uint64) func(*bun.SelectQuery) *bun.SelectQuery {
 	return func(q *bun.SelectQuery) *bun.SelectQuery {
 		if userID == 0 {
 			q = q.ColumnExpr("false AS author__following")

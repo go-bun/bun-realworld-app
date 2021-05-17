@@ -9,15 +9,15 @@ This project implements RealWorld JSON API as specified in the
 [spec](https://github.com/gothinkster/realworld). It was created to demonstrate how to use:
 
 - [treemux HTTP router](https://github.com/vmihailenco/treemux).
-- [bun db](https://github.com/uptrace/bun).
-- [bun migrations](https://bun.uptrace.dev/guide/migrations.html).
-- [bun fixtures](https://bun.uptrace.dev/guide/fixtures.html).
+- [Bun DB](https://github.com/uptrace/bun).
+- [bun/migrate](https://bun.uptrace.dev/guide/migrations.html).
+- [bun/fixture](https://bun.uptrace.dev/guide/fixtures.html).
 
 ## Project structure
 
 The project consists of the following packages:
 
-- [app](app) package parses configs, establishes DB connections etc.
+- [bunapp](bunapp) package parses configs, establishes DB connections etc.
 - [org](org) package manages users and tokens.
 - [blog](blog) package manages articles and comments.
 - [cmd/bun](cmd/bun) provides CLI commands to run HTTP server and work with DB.
@@ -43,5 +43,5 @@ Project comes with a `Makefile` that contains following recipes:
 After checking that tests are passing you can run HTTP server:
 
 ```shell
-go run cmd/bun/*.go -env=dev runserver
+go run cmd/bun/main.go -env=dev runserver
 ```

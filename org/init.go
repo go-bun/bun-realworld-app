@@ -3,11 +3,11 @@ package org
 import (
 	"context"
 
-	"github.com/uptrace/bun-realworld-app/app"
+	"github.com/uptrace/bun-realworld-app/bunapp"
 )
 
 func init() {
-	app.OnStart("org.initRoutes", func(ctx context.Context, app *app.App) error {
+	bunapp.OnStart("org.initRoutes", func(ctx context.Context, app *bunapp.App) error {
 		middleware := NewMiddleware(app)
 		userHandler := NewUserHandler(app)
 

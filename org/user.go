@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/uptrace/bun"
-	"github.com/uptrace/bun-realworld-app/app"
+	"github.com/uptrace/bun-realworld-app/bunapp"
 )
 
 type User struct {
@@ -48,7 +48,7 @@ func NewProfile(user *User) *Profile {
 	}
 }
 
-func SelectUser(ctx context.Context, app *app.App, id uint64) (*User, error) {
+func SelectUser(ctx context.Context, app *bunapp.App, id uint64) (*User, error) {
 	user := new(User)
 	if err := app.DB().NewSelect().
 		Model(user).
@@ -59,7 +59,7 @@ func SelectUser(ctx context.Context, app *app.App, id uint64) (*User, error) {
 	return user, nil
 }
 
-func SelectUserByUsername(ctx context.Context, app *app.App, username string) (*User, error) {
+func SelectUserByUsername(ctx context.Context, app *bunapp.App, username string) (*User, error) {
 	user := new(User)
 	if err := app.DB().NewSelect().
 		Model(user).

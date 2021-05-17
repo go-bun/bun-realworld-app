@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/uptrace/bun-realworld-app/app"
+	"github.com/uptrace/bun-realworld-app/bunapp"
 	"github.com/uptrace/bun-realworld-app/httputil"
 	"github.com/uptrace/bun-realworld-app/org"
 	"github.com/vmihailenco/treemux"
@@ -17,10 +17,10 @@ import (
 const kb = 10
 
 type ArticleHandler struct {
-	app *app.App
+	app *bunapp.App
 }
 
-func NewArticleHandler(app *app.App) ArticleHandler {
+func NewArticleHandler(app *bunapp.App) ArticleHandler {
 	return ArticleHandler{
 		app: app,
 	}

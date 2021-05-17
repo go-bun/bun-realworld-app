@@ -8,21 +8,16 @@ import (
 	"time"
 
 	"github.com/benbjohnson/clock"
-	"github.com/uptrace/bun-realworld-app/app"
+	"github.com/uptrace/bun-realworld-app/bunapp"
 	"github.com/uptrace/bun-realworld-app/org"
 )
 
 type TestApp struct {
-	*app.App
+	*bunapp.App
 }
 
 func StartApp(ctx context.Context) *TestApp {
-	cfg, err := app.ReadConfig("test", "test")
-	if err != nil {
-		panic(err)
-	}
-
-	app, err := app.StartConfig(ctx, cfg)
+	_, app, err := bunapp.Start(ctx, "test", "test")
 	if err != nil {
 		panic(err)
 	}
@@ -53,7 +48,7 @@ func (app *TestApp) TruncateDB(ctx context.Context) {
 //------------------------------------------------------------------------------
 
 type Client struct {
-	app *app.App
+	app *bunapp.App
 
 	userID uint64
 }

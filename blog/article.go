@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/uptrace/bun"
-	"github.com/uptrace/bun-realworld-app/app"
+	"github.com/uptrace/bun-realworld-app/bunapp"
 	"github.com/uptrace/bun-realworld-app/org"
 )
 
@@ -45,7 +45,7 @@ type FavoriteArticle struct {
 	ArticleID uint64
 }
 
-func SelectArticle(ctx context.Context, app *app.App, slug string) (*Article, error) {
+func SelectArticle(ctx context.Context, app *bunapp.App, slug string) (*Article, error) {
 	article := new(Article)
 	if err := app.DB().NewSelect().
 		Model(article).
@@ -56,7 +56,7 @@ func SelectArticle(ctx context.Context, app *app.App, slug string) (*Article, er
 	return article, nil
 }
 
-func selectArticleByFilter(ctx context.Context, app *app.App, f *ArticleFilter) (*Article, error) {
+func selectArticleByFilter(ctx context.Context, app *bunapp.App, f *ArticleFilter) (*Article, error) {
 	article := new(Article)
 	if err := app.DB().NewSelect().
 		Model(article).
@@ -73,7 +73,7 @@ func selectArticleByFilter(ctx context.Context, app *app.App, f *ArticleFilter) 
 	return article, nil
 }
 
-func createTags(ctx context.Context, app *app.App, article *Article) error {
+func createTags(ctx context.Context, app *bunapp.App, article *Article) error {
 	if len(article.TagList) == 0 {
 		return nil
 	}

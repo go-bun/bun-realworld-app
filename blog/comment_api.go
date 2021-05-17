@@ -4,17 +4,17 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/uptrace/bun-realworld-app/app"
+	"github.com/uptrace/bun-realworld-app/bunapp"
 	"github.com/uptrace/bun-realworld-app/httputil"
 	"github.com/uptrace/bun-realworld-app/org"
 	"github.com/vmihailenco/treemux"
 )
 
 type CommentHandler struct {
-	app *app.App
+	app *bunapp.App
 }
 
-func NewCommentHandler(app *app.App) CommentHandler {
+func NewCommentHandler(app *bunapp.App) CommentHandler {
 	return CommentHandler{
 		app: app,
 	}

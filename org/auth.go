@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/uptrace/bun-realworld-app/app"
+	"github.com/uptrace/bun-realworld-app/bunapp"
 	"github.com/vmihailenco/treemux"
 )
 
@@ -28,10 +28,10 @@ func authToken(req treemux.Request) string {
 }
 
 type Middleware struct {
-	app *app.App
+	app *bunapp.App
 }
 
-func NewMiddleware(app *app.App) Middleware {
+func NewMiddleware(app *bunapp.App) Middleware {
 	return Middleware{
 		app: app,
 	}

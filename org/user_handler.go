@@ -9,7 +9,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/uptrace/bun"
-	"github.com/uptrace/bun-realworld-app/app"
+	"github.com/uptrace/bun-realworld-app/bunapp"
 	"github.com/uptrace/bun-realworld-app/httputil"
 )
 
@@ -18,10 +18,10 @@ const kb = 10
 var errUserNotFound = errors.New("Not registered email or invalid password")
 
 type UserHandler struct {
-	app *app.App
+	app *bunapp.App
 }
 
-func NewUserHandler(app *app.App) UserHandler {
+func NewUserHandler(app *bunapp.App) UserHandler {
 	return UserHandler{
 		app: app,
 	}
@@ -235,7 +235,7 @@ func (h UserHandler) Unfollow(w http.ResponseWriter, req treemux.Request) error 
 	})
 }
 
-func setUserToken(app *app.App, user *User) error {
+func setUserToken(app *bunapp.App, user *User) error {
 	token, err := CreateUserToken(app, user.ID, 24*time.Hour)
 	if err != nil {
 		return err

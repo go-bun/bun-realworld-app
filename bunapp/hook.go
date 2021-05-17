@@ -1,4 +1,4 @@
-package app
+package bunapp
 
 import (
 	"context"
@@ -17,36 +17,16 @@ func OnStart(name string, fn HookFunc) {
 
 //------------------------------------------------------------------------------
 
-var (
-	onStop      appHooks
-	onAfterStop appHooks
-)
-
-func OnStop(name string, fn HookFunc) {
-	onStop.Add(newHook(name, fn))
-}
-
-func OnAfterStop(name string, fn HookFunc) {
-	onAfterStop.Add(newHook(name, fn))
-}
-
-//------------------------------------------------------------------------------
-
 type HookFunc func(ctx context.Context, app *App) error
 
 type appHooks struct {
 	mu    sync.Mutex
 	hooks []appHook
-	done  bool
 }
 
 func (hs *appHooks) Add(hook appHook) {
 	hs.mu.Lock()
 	defer hs.mu.Unlock()
-
-	if hs.done {
-		panic("hooks have already been run (register the hook before starting/stopping the app)")
-	}
 
 	hs.hooks = append(hs.hooks, hook)
 }
@@ -54,8 +34,6 @@ func (hs *appHooks) Add(hook appHook) {
 func (hs *appHooks) Run(ctx context.Context, app *App) error {
 	hs.mu.Lock()
 	defer hs.mu.Unlock()
-
-	hs.done = true
 
 	var group syncutil.Group
 	for _, h := range hs.hooks {

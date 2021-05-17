@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/uptrace/bun-realworld-app/app"
+	"github.com/uptrace/bun-realworld-app/bunapp"
 )
 
-func decodeUserToken(app *app.App, jwtToken string) (uint64, error) {
+func decodeUserToken(app *bunapp.App, jwtToken string) (uint64, error) {
 	if len(jwtToken) == 0 {
 		return 0, errors.New("token is missing or empty")
 	}
@@ -35,7 +35,7 @@ func decodeUserToken(app *app.App, jwtToken string) (uint64, error) {
 	return id, nil
 }
 
-func CreateUserToken(app *app.App, userID uint64, ttl time.Duration) (string, error) {
+func CreateUserToken(app *bunapp.App, userID uint64, ttl time.Duration) (string, error) {
 	claims := &jwt.StandardClaims{
 		Subject:   strconv.FormatUint(userID, 10),
 		ExpiresAt: time.Now().Add(ttl).Unix(),
