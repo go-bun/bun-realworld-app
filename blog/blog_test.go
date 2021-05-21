@@ -12,7 +12,7 @@ import (
 
 	"github.com/uptrace/bun-realworld-app/org"
 	"github.com/uptrace/bun-realworld-app/testbed"
-	"github.com/uptrace/bun/fixture"
+	"github.com/uptrace/bun/dbfixture"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -90,11 +90,11 @@ var _ = Describe("createArticle", func() {
 
 		app.DB().RegisterModel((*org.User)(nil))
 
-		loader := fixture.NewLoader(app.DB())
-		err := loader.Load(ctx, os.DirFS("testdata"), "fixture.yaml")
+		fixture := dbfixture.New(app.DB())
+		err := fixture.Load(ctx, os.DirFS("testdata"), "fixture.yaml")
 		Expect(err).NotTo(HaveOccurred())
 
-		user = loader.MustGet("User", "current").(*org.User)
+		user = fixture.MustRow("User.current").(*org.User)
 		userClient = app.Client().WithToken(user.ID)
 	})
 

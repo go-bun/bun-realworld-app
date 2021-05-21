@@ -67,7 +67,7 @@ func StartCLI(c *cli.Context) (context.Context, *App, error) {
 }
 
 func Start(ctx context.Context, service, envName string) (context.Context, *App, error) {
-	cfg, err := ReadConfig(service, envName)
+	cfg, err := ReadConfig(FS(), service, envName)
 	if err != nil {
 		return nil, nil, err
 	}

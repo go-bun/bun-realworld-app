@@ -1,16 +1,33 @@
 package bunapp
 
 import (
-	"fmt"
-	"io/ioutil"
-	"os"
-	"path/filepath"
+	"embed"
+	"io/fs"
+	"path"
+	"sync"
 
 	"gopkg.in/yaml.v3"
 )
 
+var (
+	//go:embed embed
+	embedFS      embed.FS
+	unwrapFSOnce sync.Once
+	unwrappedFS  fs.FS
+)
+
+func FS() fs.FS {
+	unwrapFSOnce.Do(func() {
+		fsys, err := fs.Sub(embedFS, "embed")
+		if err != nil {
+			panic(err)
+		}
+		unwrappedFS = fsys
+	})
+	return unwrappedFS
+}
+
 type AppConfig struct {
-	AppDir  string
 	Service string
 	Env     string
 
@@ -22,18 +39,8 @@ type AppConfig struct {
 	} `yaml:"pgx"`
 }
 
-func ReadConfig(service, env string) (*AppConfig, error) {
-	appDir, err := findAppDir(env)
-	if err != nil {
-		return nil, fmt.Errorf("findAppDir failed: %w", err)
-	}
-
-	f, err := os.Open(configPath(appDir, env))
-	if err != nil {
-		return nil, err
-	}
-
-	b, err := ioutil.ReadAll(f)
+func ReadConfig(fsys fs.FS, service, env string) (*AppConfig, error) {
+	b, err := fs.ReadFile(fsys, path.Join("config", env+".yaml"))
 	if err != nil {
 		return nil, err
 	}
@@ -43,37 +50,8 @@ func ReadConfig(service, env string) (*AppConfig, error) {
 		return nil, err
 	}
 
-	cfg.AppDir = appDir
 	cfg.Service = service
 	cfg.Env = env
 
 	return cfg, nil
-}
-
-func findAppDir(env string) (string, error) {
-	dir, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-
-	saved := dir
-
-	for i := 0; i < 10; i++ {
-		configPath := configPath(dir, env)
-		_, err := os.Stat(configPath)
-		if err == nil {
-			return dir, nil
-		}
-
-		if dir == "." {
-			break
-		}
-		dir = filepath.Dir(dir)
-	}
-
-	return saved, nil
-}
-
-func configPath(dir, env string) string {
-	return filepath.Join(dir, "app", "config", env+".yaml")
 }
