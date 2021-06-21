@@ -11,11 +11,12 @@ This project implements RealWorld JSON API as specified in the
 - [treemux HTTP router](https://github.com/vmihailenco/treemux).
 - [Bun DB](https://github.com/uptrace/bun).
 - [bun/migrate](https://bun.uptrace.dev/guide/migrations.html).
-- [bun/fixture](https://bun.uptrace.dev/guide/fixtures.html).
+- [bun/dbfixture](https://bun.uptrace.dev/guide/fixtures.html).
 
 ## Project structure
 
-The project consists of the following packages:
+The project uses Bun [starter kit](https://bun.uptrace.dev/guide/starter-kit.html) and consists of
+the following packages:
 
 - [bunapp](bunapp) package parses configs, establishes DB connections etc.
 - [org](org) package manages users and tokens.
@@ -23,15 +24,9 @@ The project consists of the following packages:
 - [cmd/bun](cmd/bun) provides CLI commands to run HTTP server and work with DB.
 - [cmd/bun/migrations](cmd/bun/migrations) contains database migrations.
 
-The most interesting part for bun users is probably [article filter](blog/article_filter.go).
+The most interesting part for Bun users is probably [article filter](blog/article_filter.go).
 
 ## Project bootstrap
-
-First of all you need to create a config file changing defaults as needed:
-
-```
-cp app/config/dev.yaml.default app/config/dev.yaml
-```
 
 Project comes with a `Makefile` that contains following recipes:
 
