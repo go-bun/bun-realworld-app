@@ -18,7 +18,7 @@ type Article struct {
 	Description string `json:"description"`
 	Body        string `json:"body"`
 
-	Author   *org.Profile `json:"author" bun:"rel:has-one"`
+	Author   *org.Profile `json:"author" bun:"rel:belongs-to"`
 	AuthorID uint64       `json:"-"`
 
 	Tags    []ArticleTag `json:"-" bun:"rel:has-many"`

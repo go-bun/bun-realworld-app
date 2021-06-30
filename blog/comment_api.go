@@ -57,7 +57,7 @@ func (h CommentHandler) Show(w http.ResponseWriter, req treemux.Request) error {
 		return err
 	}
 
-	id, err := req.Params.Uint64("id")
+	id, err := req.Params().Uint64("id")
 	if err != nil {
 		return err
 	}

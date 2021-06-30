@@ -13,7 +13,7 @@ type Comment struct {
 	ID   uint64 `json:"id"`
 	Body string `json:"body"`
 
-	Author   *org.Profile `json:"author" bun:"rel:has-one"`
+	Author   *org.Profile `json:"author" bun:"rel:belongs-to"`
 	AuthorID uint64       `json:"-"`
 
 	ArticleID uint64 `json:"-"`

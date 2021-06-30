@@ -283,7 +283,7 @@ var _ = Describe("createArticle", func() {
 				data = parseJSON(resp, 200)
 			})
 
-			It("returns comment to article", func() {
+			It("returns article comments", func() {
 				Expect(data["comment"]).To(MatchAllKeys(commentKeys))
 			})
 		})
@@ -295,7 +295,7 @@ var _ = Describe("createArticle", func() {
 				data = parseJSON(resp, 200)
 			})
 
-			It("returns comment to article", func() {
+			It("returns article comments", func() {
 				followedCommentKeys := testbed.ExtendKeys(commentKeys, Keys{
 					"author": Equal(map[string]interface{}{"following": true, "username": "FollowedUser", "bio": "", "image": ""}),
 				})
