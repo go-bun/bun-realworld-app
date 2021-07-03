@@ -3,3 +3,6 @@ secret_key: 'JeFvgCrMuvkoAJjkHgyaMDxku'
 
 pgx:
   dsn: postgres://postgres:@localhost:5432/realworld_dev?sslmode=disable
+
+uptrace:
+  dsn: https://Cpitatajc8tZaOHFDzErYoBr-xw19Vvr@api.uptrace.dev/8

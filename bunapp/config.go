@@ -37,6 +37,10 @@ type AppConfig struct {
 	PGX struct {
 		DSN string `yaml:"dsn"`
 	} `yaml:"pgx"`
+
+	Uptrace struct {
+		DSN string `yaml:"dsn"`
+	} `yaml:"uptrace"`
 }
 
 func ReadConfig(fsys fs.FS, service, env string) (*AppConfig, error) {

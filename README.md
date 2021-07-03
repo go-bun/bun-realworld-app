@@ -38,5 +38,5 @@ Project comes with a `Makefile` that contains following recipes:
 After checking that tests are passing you can run HTTP server:
 
 ```shell
-go run cmd/bun/main.go -env=dev runserver
+go run cmd/bun/main.go -env=dev api
 ```
