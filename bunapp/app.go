@@ -82,6 +82,9 @@ func StartConfig(ctx context.Context, cfg *AppConfig) (context.Context, *App, er
 	if err := onStart.Run(ctx, app); err != nil {
 		return nil, nil, err
 	}
+
+	setupUptrace(app)
+
 	return app.Context(), app, nil
 }
 

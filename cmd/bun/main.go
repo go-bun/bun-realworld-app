@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -13,9 +12,9 @@ import (
 	"github.com/uptrace/bun-realworld-app/cmd/bun/migrations"
 	"github.com/uptrace/bun-realworld-app/httputil"
 	_ "github.com/uptrace/bun-realworld-app/org"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/uptrace/bun/migrate"
-	"github.com/uptrace/uptrace-go/uptrace"
 	"github.com/urfave/cli/v2"
 )
 
@@ -56,18 +55,9 @@ var apiCommand = &cli.Command{
 		}
 		defer app.Stop()
 
-		uptrace.ConfigureOpentelemetry(&uptrace.Config{
-			DSN:            app.Config().Uptrace.DSN,
-			ServiceName:    "api",
-			ServiceVersion: "1.0.0",
-		})
-
-		app.OnAfterStop("uptrace.Shutdown", func(ctx context.Context, _ *bunapp.App) error {
-			return uptrace.Shutdown(ctx)
-		})
-
 		var handler http.Handler
 		handler = app.Router()
+		handler = otelhttp.NewHandler(handler, "")
 		handler = httputil.PanicHandler{Next: handler}
 		handler = httputil.ContextHandler{Ctx: ctx, Next: handler}
 
