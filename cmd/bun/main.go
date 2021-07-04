@@ -59,7 +59,6 @@ var apiCommand = &cli.Command{
 		handler = app.Router()
 		handler = otelhttp.NewHandler(handler, "")
 		handler = httputil.PanicHandler{Next: handler}
-		handler = httputil.ContextHandler{Ctx: ctx, Next: handler}
 
 		srv := &http.Server{
 			Addr:         c.String("addr"),

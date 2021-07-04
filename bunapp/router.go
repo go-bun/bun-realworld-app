@@ -8,10 +8,7 @@ import (
 	"github.com/vmihailenco/treemux/extra/reqlog"
 	"github.com/vmihailenco/treemux/extra/treemuxgzip"
 	"github.com/vmihailenco/treemux/extra/treemuxotel"
-	"go.opentelemetry.io/otel"
 )
-
-var Tracer = otel.Tracer("https://github.com/go-bun/bun-realworld-app")
 
 func (app *App) initRouter() {
 	opts := []treemux.Option{

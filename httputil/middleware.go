@@ -1,7 +1,6 @@
 package httputil
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -22,13 +21,4 @@ func (h PanicHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		}
 	}()
 	h.Next.ServeHTTP(w, req)
-}
-
-type ContextHandler struct {
-	Ctx  context.Context
-	Next http.Handler
-}
-
-func (h ContextHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	h.Next.ServeHTTP(w, req.WithContext(h.Ctx))
 }
