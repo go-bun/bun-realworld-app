@@ -12,6 +12,8 @@ import (
 	"github.com/uptrace/bun-realworld-app/cmd/bun/migrations"
 	"github.com/uptrace/bun-realworld-app/httputil"
 	_ "github.com/uptrace/bun-realworld-app/org"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+
 	"github.com/uptrace/bun/migrate"
 	"github.com/urfave/cli/v2"
 )
@@ -55,6 +57,7 @@ var apiCommand = &cli.Command{
 
 		var handler http.Handler
 		handler = app.Router()
+		handler = otelhttp.NewHandler(handler, "")
 		handler = httputil.PanicHandler{Next: handler}
 
 		srv := &http.Server{

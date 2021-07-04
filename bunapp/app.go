@@ -16,6 +16,7 @@ import (
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
 	"github.com/uptrace/bun/extra/bundebug"
+	"github.com/uptrace/bun/extra/bunotel"
 	"github.com/urfave/cli/v2"
 	"github.com/vmihailenco/treemux"
 )
@@ -81,6 +82,9 @@ func StartConfig(ctx context.Context, cfg *AppConfig) (context.Context, *App, er
 	if err := onStart.Run(ctx, app); err != nil {
 		return nil, nil, err
 	}
+
+	setupUptrace(app)
+
 	return app.Context(), app, nil
 }
 
@@ -147,6 +151,8 @@ func (app *App) DB() *bun.DB {
 		if app.IsDebug() {
 			db.AddQueryHook(bundebug.NewQueryHook(bundebug.WithVerbose()))
 		}
+
+		db.AddQueryHook(bunotel.NewQueryHook())
 
 		app.db = db
 	})

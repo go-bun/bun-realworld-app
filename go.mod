@@ -11,15 +11,20 @@ require (
 	github.com/jackc/pgx/v4 v4.11.0
 	github.com/onsi/ginkgo v1.15.0
 	github.com/onsi/gomega v1.10.5
-	github.com/uptrace/bun v0.2.13
+	github.com/uptrace/bun v0.2.14
 	github.com/uptrace/bun/dbfixture v0.2.13
-	github.com/uptrace/bun/dialect/pgdialect v0.2.13
+	github.com/uptrace/bun/dialect/pgdialect v0.2.14
 	github.com/uptrace/bun/extra/bundebug v0.2.13
+	github.com/uptrace/bun/extra/bunotel v0.2.14
+	github.com/uptrace/uptrace-go v0.21.1
 	github.com/urfave/cli/v2 v2.3.0
 	github.com/vmihailenco/treemux v0.7.2
 	github.com/vmihailenco/treemux/extra/reqlog v0.7.2
 	github.com/vmihailenco/treemux/extra/treemuxgzip v0.7.2
 	github.com/vmihailenco/treemux/extra/treemuxotel v0.7.2
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.21.0 // indirect
+	go.opentelemetry.io/otel v1.0.0-RC1 // indirect
+	go.opentelemetry.io/otel/trace v1.0.0-RC1 // indirect
 	go4.org v0.0.0-20201209231011-d4a079459e60
 	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
 	golang.org/x/text v0.3.5 // indirect
