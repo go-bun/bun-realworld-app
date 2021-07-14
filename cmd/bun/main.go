@@ -92,7 +92,8 @@ func newDBCommand(migrations *migrate.Migrations) *cli.Command {
 					}
 					defer app.Stop()
 
-					return migrations.Init(ctx, app.DB())
+					migrator := migrate.NewMigrator(app.DB(), migrations)
+					return migrator.Init(ctx)
 				},
 			},
 			{
@@ -105,7 +106,20 @@ func newDBCommand(migrations *migrate.Migrations) *cli.Command {
 					}
 					defer app.Stop()
 
-					return migrations.Migrate(ctx, app.DB())
+					migrator := migrate.NewMigrator(app.DB(), migrations)
+
+					group, err := migrator.Migrate(ctx)
+					if err != nil {
+						return err
+					}
+
+					if group.ID == 0 {
+						fmt.Printf("there are no new migrations to run\n")
+						return nil
+					}
+
+					fmt.Printf("migrated to %s\n", group)
+					return nil
 				},
 			},
 			{
@@ -118,7 +132,20 @@ func newDBCommand(migrations *migrate.Migrations) *cli.Command {
 					}
 					defer app.Stop()
 
-					return migrations.Rollback(ctx, app.DB())
+					migrator := migrate.NewMigrator(app.DB(), migrations)
+
+					group, err := migrator.Rollback(ctx)
+					if err != nil {
+						return err
+					}
+
+					if group.ID == 0 {
+						fmt.Printf("there are no groups to roll back\n")
+						return nil
+					}
+
+					fmt.Printf("rolled back %s\n", group)
+					return nil
 				},
 			},
 			{
@@ -131,7 +158,8 @@ func newDBCommand(migrations *migrate.Migrations) *cli.Command {
 					}
 					defer app.Stop()
 
-					return migrations.Lock(ctx, app.DB())
+					migrator := migrate.NewMigrator(app.DB(), migrations)
+					return migrator.Lock(ctx)
 				},
 			},
 			{
@@ -144,7 +172,8 @@ func newDBCommand(migrations *migrate.Migrations) *cli.Command {
 					}
 					defer app.Stop()
 
-					return migrations.Unlock(ctx, app.DB())
+					migrator := migrate.NewMigrator(app.DB(), migrations)
+					return migrator.Unlock(ctx)
 				},
 			},
 			{
@@ -157,7 +186,14 @@ func newDBCommand(migrations *migrate.Migrations) *cli.Command {
 					}
 					defer app.Stop()
 
-					return migrations.CreateGo(ctx, app.DB(), c.Args().Get(0))
+					migrator := migrate.NewMigrator(app.DB(), migrations)
+
+					mf, err := migrator.CreateGo(ctx, c.Args().Get(0))
+					if err != nil {
+						return err
+					}
+					fmt.Printf("created migration %s (%s)\n", mf.FileName, mf.FilePath)
+					return nil
 				},
 			},
 			{
@@ -170,7 +206,63 @@ func newDBCommand(migrations *migrate.Migrations) *cli.Command {
 					}
 					defer app.Stop()
 
-					return migrations.CreateSQL(ctx, app.DB(), c.Args().Get(0))
+					migrator := migrate.NewMigrator(app.DB(), migrations)
+
+					mf, err := migrator.CreateSQL(ctx, c.Args().Get(0))
+					if err != nil {
+						return err
+					}
+					fmt.Printf("created migration %s (%s)\n", mf.FileName, mf.FilePath)
+					return nil
+				},
+			},
+			{
+				Name:  "status",
+				Usage: "print migrations status",
+				Action: func(c *cli.Context) error {
+					ctx, app, err := bunapp.StartCLI(c)
+					if err != nil {
+						return err
+					}
+					defer app.Stop()
+
+					migrator := migrate.NewMigrator(app.DB(), migrations)
+
+					ms, err := migrator.MigrationsWithStatus(ctx)
+					if err != nil {
+						return err
+					}
+					fmt.Printf("migrations: %s\n", ms)
+					fmt.Printf("unapplied migrations: %s\n", ms.Unapplied())
+					fmt.Printf("last migration group: %s\n", ms.LastGroup())
+
+					return nil
+				},
+			},
+			{
+				Name:  "mark_applied",
+				Usage: "mark migrations as applied without actually running them",
+				Action: func(c *cli.Context) error {
+					ctx, app, err := bunapp.StartCLI(c)
+					if err != nil {
+						return err
+					}
+					defer app.Stop()
+
+					migrator := migrate.NewMigrator(app.DB(), migrations)
+
+					group, err := migrator.Migrate(ctx, migrate.WithNopMigration())
+					if err != nil {
+						return err
+					}
+
+					if group.ID == 0 {
+						fmt.Printf("there are no new migrations to mark as applied\n")
+						return nil
+					}
+
+					fmt.Printf("marked as applied %s\n", group)
+					return nil
 				},
 			},
 		},
