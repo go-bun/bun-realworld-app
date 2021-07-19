@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	_ "github.com/uptrace/bun-realworld-app/blog"
@@ -188,17 +189,19 @@ func newDBCommand(migrations *migrate.Migrations) *cli.Command {
 
 					migrator := migrate.NewMigrator(app.DB(), migrations)
 
-					mf, err := migrator.CreateGo(ctx, c.Args().Get(0))
+					name := strings.Join(c.Args().Slice(), "_")
+					mf, err := migrator.CreateGoMigration(ctx, name)
 					if err != nil {
 						return err
 					}
-					fmt.Printf("created migration %s (%s)\n", mf.FileName, mf.FilePath)
+					fmt.Printf("created migration %s (%s)\n", mf.Name, mf.Path)
+
 					return nil
 				},
 			},
 			{
 				Name:  "create_sql",
-				Usage: "create SQL migration",
+				Usage: "create up and down SQL migrations",
 				Action: func(c *cli.Context) error {
 					ctx, app, err := bunapp.StartCLI(c)
 					if err != nil {
@@ -208,11 +211,16 @@ func newDBCommand(migrations *migrate.Migrations) *cli.Command {
 
 					migrator := migrate.NewMigrator(app.DB(), migrations)
 
-					mf, err := migrator.CreateSQL(ctx, c.Args().Get(0))
+					name := strings.Join(c.Args().Slice(), "_")
+					files, err := migrator.CreateSQLMigrations(ctx, name)
 					if err != nil {
 						return err
 					}
-					fmt.Printf("created migration %s (%s)\n", mf.FileName, mf.FilePath)
+
+					for _, mf := range files {
+						fmt.Printf("created migration %s (%s)\n", mf.Name, mf.Path)
+					}
+
 					return nil
 				},
 			},

@@ -11,10 +11,10 @@ require (
 	github.com/jackc/pgx/v4 v4.11.0
 	github.com/onsi/ginkgo v1.15.0
 	github.com/onsi/gomega v1.10.5
-	github.com/uptrace/bun v0.3.2
-	github.com/uptrace/bun/dbfixture v0.3.2
-	github.com/uptrace/bun/dialect/pgdialect v0.3.2
-	github.com/uptrace/bun/extra/bundebug v0.3.2
+	github.com/uptrace/bun v0.3.4
+	github.com/uptrace/bun/dbfixture v0.3.4
+	github.com/uptrace/bun/dialect/pgdialect v0.3.4
+	github.com/uptrace/bun/extra/bundebug v0.3.4
 	github.com/urfave/cli/v2 v2.3.0
 	github.com/vmihailenco/treemux v0.7.2
 	github.com/vmihailenco/treemux/extra/reqlog v0.7.2
