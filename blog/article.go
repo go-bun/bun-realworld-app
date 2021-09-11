@@ -22,10 +22,10 @@ type Article struct {
 	AuthorID uint64       `json:"-"`
 
 	Tags    []ArticleTag `json:"-" bun:"rel:has-many"`
-	TagList []string     `json:"tagList" bun:"-,array"`
+	TagList []string     `json:"tagList" bun:",scanonly,array"`
 
-	Favorited      bool `json:"favorited" bun:"-"`
-	FavoritesCount int  `json:"favoritesCount" bun:"-"`
+	Favorited      bool `json:"favorited" bun:",scanonly"`
+	FavoritesCount int  `json:"favoritesCount" bun:",scanonly"`
 
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`

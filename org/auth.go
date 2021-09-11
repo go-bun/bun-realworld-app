@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/uptrace/bun-realworld-app/bunapp"
-	"github.com/vmihailenco/treemux"
+	"github.com/uptrace/treemux"
 )
 
 type (

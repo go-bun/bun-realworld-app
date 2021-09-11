@@ -17,7 +17,7 @@ type User struct {
 	Image        string `json:"image"`
 	Password     string `bun:"-" json:"password,omitempty"`
 	PasswordHash string `json:"-"`
-	Following    bool   `bun:"-" json:"following"`
+	Following    bool   `bun:",scanonly" json:"following"`
 
 	Token string `bun:"-" json:"token,omitempty"`
 }
@@ -36,7 +36,7 @@ type Profile struct {
 	Username  string `json:"username"`
 	Bio       string `json:"bio"`
 	Image     string `json:"image"`
-	Following bool   `bun:"-" json:"following"`
+	Following bool   `bun:",scanonly" json:"following"`
 }
 
 func NewProfile(user *User) *Profile {

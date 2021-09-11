@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/vmihailenco/treemux"
+	"github.com/uptrace/treemux"
 )
 
 func UnmarshalJSON(

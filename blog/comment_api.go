@@ -7,7 +7,7 @@ import (
 	"github.com/uptrace/bun-realworld-app/bunapp"
 	"github.com/uptrace/bun-realworld-app/httputil"
 	"github.com/uptrace/bun-realworld-app/org"
-	"github.com/vmihailenco/treemux"
+	"github.com/uptrace/treemux"
 )
 
 type CommentHandler struct {

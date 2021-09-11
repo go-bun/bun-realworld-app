@@ -5,7 +5,7 @@ import (
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun-realworld-app/bunapp"
 	"github.com/uptrace/bun-realworld-app/org"
-	"github.com/vmihailenco/treemux"
+	"github.com/uptrace/treemux"
 )
 
 type ArticleFilter struct {

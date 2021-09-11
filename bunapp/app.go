@@ -16,8 +16,8 @@ import (
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
 	"github.com/uptrace/bun/extra/bundebug"
+	"github.com/uptrace/treemux"
 	"github.com/urfave/cli/v2"
-	"github.com/vmihailenco/treemux"
 )
 
 type appCtxKey struct{}

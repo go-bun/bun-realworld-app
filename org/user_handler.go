@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/vmihailenco/treemux"
+	"github.com/uptrace/treemux"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/uptrace/bun"
