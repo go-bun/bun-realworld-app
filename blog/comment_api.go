@@ -7,7 +7,7 @@ import (
 	"github.com/uptrace/bun-realworld-app/bunapp"
 	"github.com/uptrace/bun-realworld-app/httputil"
 	"github.com/uptrace/bun-realworld-app/org"
-	"github.com/uptrace/treemux"
+	"github.com/uptrace/bunrouter"
 )
 
 type CommentHandler struct {
@@ -20,7 +20,7 @@ func NewCommentHandler(app *bunapp.App) CommentHandler {
 	}
 }
 
-func (h CommentHandler) List(w http.ResponseWriter, req treemux.Request) error {
+func (h CommentHandler) List(w http.ResponseWriter, req bunrouter.Request) error {
 	ctx := req.Context()
 
 	article, err := SelectArticle(ctx, h.app, req.Param("slug"))
@@ -44,12 +44,12 @@ func (h CommentHandler) List(w http.ResponseWriter, req treemux.Request) error {
 		return err
 	}
 
-	return treemux.JSON(w, treemux.H{
+	return bunrouter.JSON(w, bunrouter.H{
 		"comments": comments,
 	})
 }
 
-func (h CommentHandler) Show(w http.ResponseWriter, req treemux.Request) error {
+func (h CommentHandler) Show(w http.ResponseWriter, req bunrouter.Request) error {
 	ctx := req.Context()
 
 	article, err := SelectArticle(ctx, h.app, req.Param("slug"))
@@ -79,12 +79,12 @@ func (h CommentHandler) Show(w http.ResponseWriter, req treemux.Request) error {
 		return err
 	}
 
-	return treemux.JSON(w, treemux.H{
+	return bunrouter.JSON(w, bunrouter.H{
 		"comment": comment,
 	})
 }
 
-func (h CommentHandler) Create(w http.ResponseWriter, req treemux.Request) error {
+func (h CommentHandler) Create(w http.ResponseWriter, req bunrouter.Request) error {
 	ctx := req.Context()
 	user := org.UserFromContext(ctx)
 
@@ -119,12 +119,12 @@ func (h CommentHandler) Create(w http.ResponseWriter, req treemux.Request) error
 	}
 
 	comment.Author = org.NewProfile(user)
-	return treemux.JSON(w, treemux.H{
+	return bunrouter.JSON(w, bunrouter.H{
 		"comment": comment,
 	})
 }
 
-func (h CommentHandler) Delete(w http.ResponseWriter, req treemux.Request) error {
+func (h CommentHandler) Delete(w http.ResponseWriter, req bunrouter.Request) error {
 	ctx := req.Context()
 	user := org.UserFromContext(ctx)
 

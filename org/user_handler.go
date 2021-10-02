@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/uptrace/treemux"
+	"github.com/uptrace/bunrouter"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/uptrace/bun"
@@ -27,14 +27,14 @@ func NewUserHandler(app *bunapp.App) UserHandler {
 	}
 }
 
-func (*UserHandler) Current(w http.ResponseWriter, req treemux.Request) error {
+func (*UserHandler) Current(w http.ResponseWriter, req bunrouter.Request) error {
 	user := UserFromContext(req.Context())
-	return treemux.JSON(w, treemux.H{
+	return bunrouter.JSON(w, bunrouter.H{
 		"user": user,
 	})
 }
 
-func (h UserHandler) Create(w http.ResponseWriter, req treemux.Request) error {
+func (h UserHandler) Create(w http.ResponseWriter, req bunrouter.Request) error {
 	ctx := req.Context()
 
 	var in struct {
@@ -68,12 +68,12 @@ func (h UserHandler) Create(w http.ResponseWriter, req treemux.Request) error {
 	}
 
 	user.Password = ""
-	return treemux.JSON(w, treemux.H{
+	return bunrouter.JSON(w, bunrouter.H{
 		"user": user,
 	})
 }
 
-func (h UserHandler) Login(w http.ResponseWriter, req treemux.Request) error {
+func (h UserHandler) Login(w http.ResponseWriter, req bunrouter.Request) error {
 	ctx := req.Context()
 
 	var in struct {
@@ -106,12 +106,12 @@ func (h UserHandler) Login(w http.ResponseWriter, req treemux.Request) error {
 		return err
 	}
 
-	return treemux.JSON(w, treemux.H{
+	return bunrouter.JSON(w, bunrouter.H{
 		"user": user,
 	})
 }
 
-func (h UserHandler) Update(w http.ResponseWriter, req treemux.Request) error {
+func (h UserHandler) Update(w http.ResponseWriter, req bunrouter.Request) error {
 	ctx := req.Context()
 	authUser := UserFromContext(ctx)
 
@@ -149,12 +149,12 @@ func (h UserHandler) Update(w http.ResponseWriter, req treemux.Request) error {
 	}
 
 	user.Password = ""
-	return treemux.JSON(w, treemux.H{
+	return bunrouter.JSON(w, bunrouter.H{
 		"user": authUser,
 	})
 }
 
-func (h UserHandler) Profile(w http.ResponseWriter, req treemux.Request) error {
+func (h UserHandler) Profile(w http.ResponseWriter, req bunrouter.Request) error {
 	ctx := req.Context()
 
 	followingColumn := func(q *bun.SelectQuery) *bun.SelectQuery {
@@ -182,12 +182,12 @@ func (h UserHandler) Profile(w http.ResponseWriter, req treemux.Request) error {
 		return err
 	}
 
-	return treemux.JSON(w, treemux.H{
+	return bunrouter.JSON(w, bunrouter.H{
 		"profile": NewProfile(user),
 	})
 }
 
-func (h UserHandler) Follow(w http.ResponseWriter, req treemux.Request) error {
+func (h UserHandler) Follow(w http.ResponseWriter, req bunrouter.Request) error {
 	ctx := req.Context()
 	authUser := UserFromContext(ctx)
 
@@ -207,12 +207,12 @@ func (h UserHandler) Follow(w http.ResponseWriter, req treemux.Request) error {
 	}
 
 	user.Following = true
-	return treemux.JSON(w, treemux.H{
+	return bunrouter.JSON(w, bunrouter.H{
 		"profile": NewProfile(user),
 	})
 }
 
-func (h UserHandler) Unfollow(w http.ResponseWriter, req treemux.Request) error {
+func (h UserHandler) Unfollow(w http.ResponseWriter, req bunrouter.Request) error {
 	ctx := req.Context()
 	authUser := UserFromContext(ctx)
 
@@ -230,7 +230,7 @@ func (h UserHandler) Unfollow(w http.ResponseWriter, req treemux.Request) error 
 	}
 
 	user.Following = false
-	return treemux.JSON(w, treemux.H{
+	return bunrouter.JSON(w, bunrouter.H{
 		"profile": NewProfile(user),
 	})
 }

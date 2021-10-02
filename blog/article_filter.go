@@ -5,7 +5,7 @@ import (
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun-realworld-app/bunapp"
 	"github.com/uptrace/bun-realworld-app/org"
-	"github.com/uptrace/treemux"
+	"github.com/uptrace/bunrouter"
 )
 
 type ArticleFilter struct {
@@ -20,7 +20,7 @@ type ArticleFilter struct {
 	urlstruct.Pager
 }
 
-func decodeArticleFilter(app *bunapp.App, req treemux.Request) (*ArticleFilter, error) {
+func decodeArticleFilter(app *bunapp.App, req bunrouter.Request) (*ArticleFilter, error) {
 	ctx := req.Context()
 	query := req.URL.Query()
 

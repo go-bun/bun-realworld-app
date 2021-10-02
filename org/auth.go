@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/uptrace/bun-realworld-app/bunapp"
-	"github.com/uptrace/treemux"
+	"github.com/uptrace/bunrouter"
 )
 
 type (
@@ -20,7 +20,7 @@ func UserFromContext(ctx context.Context) *User {
 	return user
 }
 
-func authToken(req treemux.Request) string {
+func authToken(req bunrouter.Request) string {
 	const prefix = "Token "
 	v := req.Header.Get("Authorization")
 	v = strings.TrimPrefix(v, prefix)
@@ -37,8 +37,8 @@ func NewMiddleware(app *bunapp.App) Middleware {
 	}
 }
 
-func (m Middleware) User(next treemux.HandlerFunc) treemux.HandlerFunc {
-	return func(w http.ResponseWriter, req treemux.Request) error {
+func (m Middleware) User(next bunrouter.HandlerFunc) bunrouter.HandlerFunc {
+	return func(w http.ResponseWriter, req bunrouter.Request) error {
 		ctx := req.Context()
 
 		token := authToken(req)
@@ -65,8 +65,8 @@ func (m Middleware) User(next treemux.HandlerFunc) treemux.HandlerFunc {
 	}
 }
 
-func (m Middleware) MustUser(next treemux.HandlerFunc) treemux.HandlerFunc {
-	return func(w http.ResponseWriter, req treemux.Request) error {
+func (m Middleware) MustUser(next bunrouter.HandlerFunc) bunrouter.HandlerFunc {
+	return func(w http.ResponseWriter, req bunrouter.Request) error {
 		if err, ok := req.Context().Value(userErrCtxKey{}).(error); ok {
 			return err
 		}

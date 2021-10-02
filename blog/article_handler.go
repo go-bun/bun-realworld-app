@@ -9,7 +9,7 @@ import (
 	"github.com/uptrace/bun-realworld-app/bunapp"
 	"github.com/uptrace/bun-realworld-app/httputil"
 	"github.com/uptrace/bun-realworld-app/org"
-	"github.com/uptrace/treemux"
+	"github.com/uptrace/bunrouter"
 
 	"github.com/gosimple/slug"
 )
@@ -26,7 +26,7 @@ func NewArticleHandler(app *bunapp.App) ArticleHandler {
 	}
 }
 
-func (h ArticleHandler) List(w http.ResponseWriter, req treemux.Request) error {
+func (h ArticleHandler) List(w http.ResponseWriter, req bunrouter.Request) error {
 	ctx := req.Context()
 
 	f, err := decodeArticleFilter(h.app, req)
@@ -45,13 +45,13 @@ func (h ArticleHandler) List(w http.ResponseWriter, req treemux.Request) error {
 		return err
 	}
 
-	return treemux.JSON(w, treemux.H{
+	return bunrouter.JSON(w, bunrouter.H{
 		"articles":      articles,
 		"articlesCount": len(articles),
 	})
 }
 
-func (h ArticleHandler) Show(w http.ResponseWriter, req treemux.Request) error {
+func (h ArticleHandler) Show(w http.ResponseWriter, req bunrouter.Request) error {
 	ctx := req.Context()
 
 	f, err := decodeArticleFilter(h.app, req)
@@ -64,12 +64,12 @@ func (h ArticleHandler) Show(w http.ResponseWriter, req treemux.Request) error {
 		return err
 	}
 
-	return treemux.JSON(w, treemux.H{
+	return bunrouter.JSON(w, bunrouter.H{
 		"article": article,
 	})
 }
 
-func (h ArticleHandler) Feed(w http.ResponseWriter, req treemux.Request) error {
+func (h ArticleHandler) Feed(w http.ResponseWriter, req bunrouter.Request) error {
 	ctx := req.Context()
 
 	f, err := decodeArticleFilter(h.app, req)
@@ -87,13 +87,13 @@ func (h ArticleHandler) Feed(w http.ResponseWriter, req treemux.Request) error {
 		return err
 	}
 
-	return treemux.JSON(w, treemux.H{
+	return bunrouter.JSON(w, bunrouter.H{
 		"articles":      articles,
 		"articlesCount": len(articles),
 	})
 }
 
-func (h ArticleHandler) Create(w http.ResponseWriter, req treemux.Request) error {
+func (h ArticleHandler) Create(w http.ResponseWriter, req bunrouter.Request) error {
 	ctx := req.Context()
 	user := org.UserFromContext(ctx)
 
@@ -127,12 +127,12 @@ func (h ArticleHandler) Create(w http.ResponseWriter, req treemux.Request) error
 	}
 
 	article.Author = org.NewProfile(user)
-	return treemux.JSON(w, treemux.H{
+	return bunrouter.JSON(w, bunrouter.H{
 		"article": article,
 	})
 }
 
-func (h ArticleHandler) Update(w http.ResponseWriter, req treemux.Request) error {
+func (h ArticleHandler) Update(w http.ResponseWriter, req bunrouter.Request) error {
 	ctx := req.Context()
 	user := org.UserFromContext(ctx)
 
@@ -178,12 +178,12 @@ func (h ArticleHandler) Update(w http.ResponseWriter, req treemux.Request) error
 	}
 
 	article.Author = org.NewProfile(user)
-	return treemux.JSON(w, treemux.H{
+	return bunrouter.JSON(w, bunrouter.H{
 		"article": article,
 	})
 }
 
-func (h ArticleHandler) Delete(w http.ResponseWriter, req treemux.Request) error {
+func (h ArticleHandler) Delete(w http.ResponseWriter, req bunrouter.Request) error {
 	ctx := req.Context()
 	user := org.UserFromContext(ctx)
 
@@ -198,7 +198,7 @@ func (h ArticleHandler) Delete(w http.ResponseWriter, req treemux.Request) error
 	return nil
 }
 
-func (h ArticleHandler) Favorite(w http.ResponseWriter, req treemux.Request) error {
+func (h ArticleHandler) Favorite(w http.ResponseWriter, req bunrouter.Request) error {
 	ctx := req.Context()
 	user := org.UserFromContext(ctx)
 
@@ -232,12 +232,12 @@ func (h ArticleHandler) Favorite(w http.ResponseWriter, req treemux.Request) err
 		article.FavoritesCount = article.FavoritesCount + 1
 	}
 
-	return treemux.JSON(w, treemux.H{
+	return bunrouter.JSON(w, bunrouter.H{
 		"article": article,
 	})
 }
 
-func (h ArticleHandler) Unfavorite(w http.ResponseWriter, req treemux.Request) error {
+func (h ArticleHandler) Unfavorite(w http.ResponseWriter, req bunrouter.Request) error {
 	ctx := req.Context()
 	user := org.UserFromContext(ctx)
 
@@ -269,7 +269,7 @@ func (h ArticleHandler) Unfavorite(w http.ResponseWriter, req treemux.Request) e
 		article.FavoritesCount = article.FavoritesCount - 1
 	}
 
-	return treemux.JSON(w, treemux.H{
+	return bunrouter.JSON(w, bunrouter.H{
 		"article": article,
 	})
 }

@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/uptrace/bun-realworld-app/bunapp"
-	"github.com/uptrace/treemux"
+	"github.com/uptrace/bunrouter"
 )
 
 type TagHandler struct {
@@ -18,7 +18,7 @@ func NewTagHandler(app *bunapp.App) TagHandler {
 	}
 }
 
-func (h TagHandler) List(w http.ResponseWriter, req treemux.Request) error {
+func (h TagHandler) List(w http.ResponseWriter, req bunrouter.Request) error {
 	ctx := req.Context()
 
 	tags := make([]string, 0)
@@ -31,7 +31,7 @@ func (h TagHandler) List(w http.ResponseWriter, req treemux.Request) error {
 		return err
 	}
 
-	return treemux.JSON(w, treemux.H{
+	return bunrouter.JSON(w, bunrouter.H{
 		"tags": tags,
 	})
 }

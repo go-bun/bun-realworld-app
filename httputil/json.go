@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/uptrace/treemux"
+	"github.com/uptrace/bunrouter"
 )
 
 func UnmarshalJSON(
 	w http.ResponseWriter,
-	req treemux.Request,
+	req bunrouter.Request,
 	dst interface{},
 	maxBytes int64,
 ) error {
