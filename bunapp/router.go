@@ -5,24 +5,22 @@ import (
 
 	"github.com/uptrace/bun-realworld-app/httputil/httperror"
 	"github.com/uptrace/bunrouter"
-	"github.com/uptrace/bunrouter/extra/bunroutergzip"
 	"github.com/uptrace/bunrouter/extra/bunrouterotel"
 	"github.com/uptrace/bunrouter/extra/reqlog"
 )
 
 func (app *App) initRouter() {
-	opts := []bunrouter.Option{
-		bunrouter.WithMiddleware(bunroutergzip.NewMiddleware()),
+	app.router = bunrouter.New(
+		bunrouter.WithMiddleware(reqlog.NewMiddleware(
+			reqlog.WithEnabled(app.IsDebug()),
+			reqlog.FromEnv(""),
+		)),
 		bunrouter.WithMiddleware(bunrouterotel.NewMiddleware()),
-	}
-	if app.IsDebug() {
-		opts = append(opts, bunrouter.WithMiddleware(reqlog.NewMiddleware()))
-	}
-	opts = append(opts, bunrouter.WithMiddleware(errorHandler))
+	)
 
-	app.router = bunrouter.New(opts...)
 	app.apiRouter = app.router.NewGroup("/api",
 		bunrouter.WithMiddleware(corsMiddleware),
+		bunrouter.WithMiddleware(errorHandler),
 	)
 }
 
