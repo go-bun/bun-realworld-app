@@ -2,6 +2,7 @@ package bunapp
 
 import (
 	"context"
+	"database/sql"
 	"math/rand"
 	"os"
 	"os/signal"
@@ -11,10 +12,9 @@ import (
 	"time"
 
 	"github.com/benbjohnson/clock"
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/stdlib"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
+	"github.com/uptrace/bun/driver/pgdriver"
 	"github.com/uptrace/bun/extra/bundebug"
 	"github.com/uptrace/bunrouter"
 	"github.com/urfave/cli/v2"
@@ -135,13 +135,7 @@ func (app *App) APIRouter() *bunrouter.Group {
 
 func (app *App) DB() *bun.DB {
 	app.dbOnce.Do(func() {
-		config, err := pgx.ParseConfig(app.cfg.PGX.DSN)
-		if err != nil {
-			panic(err)
-		}
-
-		config.PreferSimpleProtocol = true
-		sqldb := stdlib.OpenDB(*config)
+		sqldb := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(app.cfg.PGX.DSN)))
 
 		db := bun.NewDB(sqldb, pgdialect.New())
 		db.AddQueryHook(bundebug.NewQueryHook(
